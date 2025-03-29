@@ -3,18 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoMoto - Rastreamento Ativo</title>
+    <title>GoMoto - Rastreamento</title>
+    
+    <!-- Manifest PWA (ícone 1moto.png) -->
+    <link rel="manifest" href="manifest.json">
+    
     <!-- MapLibre -->
-    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
         #status {
-            position: absolute; top: 10px; left: 10px;
-            background: rgba(255,255,255,0.9);
-            padding: 8px; border-radius: 4px;
-            z-index: 1000; font-family: Arial;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 4px;
+            z-index: 1000;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .moto-marker {
+            width: 40px;
+            height: 40px;
+            background-image: url('icons/moto.png'); /* Ícone do marcador */
+            background-size: contain;
+            background-repeat: no-repeat;
+            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
         }
     </style>
 </head>
@@ -23,58 +51,52 @@
     <div id="status">Iniciando rastreamento...</div>
 
     <script>
-        // 1. INICIALIZAÇÃO DO MAPA
+        // Configuração do Mapa
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x', // CHAVE CORRETA
-            center: [-48.5487, -27.5928], // Coordenadas de Florianópolis/SC
+            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
+            center: [-48.5487, -27.5928], // Florianópolis/SC
             zoom: 14
         });
 
-        // 2. CONTROLES
-        map.addControl(new maplibregl.NavigationControl());
-        const geolocate = new maplibregl.GeolocateControl({
-            positionOptions: { enableHighAccuracy: true },
-            trackUserLocation: true,
-            showAccuracyCircle: true
-        });
-        map.addControl(geolocate);
-
-        // 3. MARCADOR PERSONALIZADO (MOTO)
+        // Marcador Personalizado (usa moto.png)
+        const el = document.createElement('div');
+        el.className = 'moto-marker';
         const marker = new maplibregl.Marker({
-            color: "#FF0000",
-            scale: 1.2
-        }).setLngLat([-48.5487, -27.5928]).addTo(map);
+            element: el,
+            anchor: 'bottom'
+        }).setLngLat([-48.5487, -27.5928])
+          .addTo(map);
 
-        // 4. RASTREAMENTO EM TEMPO REAL
-        geolocate.on('geolocate', (e) => {
-            const lon = e.coords.longitude;
-            const lat = e.coords.latitude;
-            
-            // Atualiza marcador
-            marker.setLngLat([lon, lat]);
-            
-            // Centraliza no usuário
-            map.flyTo({ center: [lon, lat], zoom: 16 });
-            
-            // Atualiza status
-            document.getElementById('status').innerHTML = `
-                <b>POSIÇÃO ATUAL</b><br>
-                ${lat.toFixed(5)}, ${lon.toFixed(5)}<br>
-                Precisão: ${e.coords.accuracy.toFixed(0)}m
-            `;
-        });
+        // Atualização em Tempo Real
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    const lngLat = [pos.coords.longitude, pos.coords.latitude];
+                    marker.setLngLat(lngLat);
+                    map.flyTo({ center: lngLat, zoom: 16 });
+                    
+                    document.getElementById('status').innerHTML = `
+                        <strong>MOTORISTA</strong><br>
+                        ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
+                        Precisão: ${pos.coords.accuracy.toFixed(0)}m
+                    `;
+                },
+                (err) => {
+                    document.getElementById('status').innerHTML = 
+                        `<strong style="color:red">ERRO:</strong> ${err.message}`;
+                },
+                { enableHighAccuracy: true }
+            );
+        }
 
-        // 5. TRATAMENTO DE ERROS
-        geolocate.on('error', (e) => {
-            document.getElementById('status').innerHTML = 
-                `<b style="color:red">ERRO:</b> ${e.message}`;
-        });
-
-        // 6. FORÇAR INÍCIO DO RASTREAMENTO
-        map.on('load', () => {
-            geolocate.trigger(); // Inicia imediatamente
-        });
+        // Registro do Service Worker (PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registrado');
+                });
+        }
     </script>
 </body>
 </html>
