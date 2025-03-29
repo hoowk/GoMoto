@@ -3,105 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>GoMoto - Rastreamento</title>
-    
+    <title>GoMoto - Rastreamento Ativo</title>
     <!-- MapLibre -->
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-    
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-        }
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         #status {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 8px 12px;
-            border-radius: 4px;
-            z-index: 1000;
-            font-size: 14px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 8px; border-radius: 4px;
+            z-index: 1000; font-family: Arial;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    <div id="status">Carregando mapa...</div>
+    <div id="status">Iniciando rastreamento...</div>
 
     <script>
-        // Configuração do Mapa com estilo detalhado
+        // 1. INICIALIZAÇÃO DO MAPA
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://tiles.stadiamaps.com/styles/alidade_smooth.json', // ESTILO COM RUAS
-            center: [-46.633, -23.550],
-            zoom: 14,
-            maxZoom: 18
+            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL', // ESTILO COM RUAS
+            center: [-48.5487, -27.5928], // Coordenadas de Florianópolis/SC
+            zoom: 14
         });
 
-        // Controles
+        // 2. CONTROLES
         map.addControl(new maplibregl.NavigationControl());
-        map.addControl(new maplibregl.GeolocateControl({
+        const geolocate = new maplibregl.GeolocateControl({
             positionOptions: { enableHighAccuracy: true },
-            trackUserLocation: true
-        }));
+            trackUserLocation: true,
+            showAccuracyCircle: true
+        });
+        map.addControl(geolocate);
 
-        // Marcador (ícone de moto)
-        const el = document.createElement('div');
-        el.className = 'moto-marker';
-        el.innerHTML = '🏍️'; // Ícone temporário (substitua por sua imagem)
-        el.style.fontSize = '30px';
-        el.style.textAlign = 'center';
-        
-        const marker = new maplibregl.Marker(el)
-            .setLngLat([-46.633, -23.550])
-            .addTo(map);
+        // 3. MARCADOR PERSONALIZADO (MOTO)
+        const marker = new maplibregl.Marker({
+            color: "#FF0000",
+            scale: 1.2
+        }).setLngLat([-48.5487, -27.5928]).addTo(map);
 
-        // Atualização de posição
-        function updatePosition(position) {
-            const lngLat = [position.coords.longitude, position.coords.latitude];
-            marker.setLngLat(lngLat);
-            map.flyTo({ center: lngLat, speed: 0.5 });
+        // 4. RASTREAMENTO EM TEMPO REAL
+        geolocate.on('geolocate', (e) => {
+            const lon = e.coords.longitude;
+            const lat = e.coords.latitude;
             
+            // Atualiza marcador
+            marker.setLngLat([lon, lat]);
+            
+            // Centraliza no usuário
+            map.flyTo({ center: [lon, lat], zoom: 16 });
+            
+            // Atualiza status
             document.getElementById('status').innerHTML = `
-                <strong>MOTORISTA</strong><br>
-                ${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}<br>
-                Precisão: ${position.coords.accuracy.toFixed(1)}m
+                <b>POSIÇÃO ATUAL</b><br>
+                ${lat.toFixed(5)}, ${lon.toFixed(5)}<br>
+                Precisão: ${e.coords.accuracy.toFixed(0)}m
             `;
-        }
+        });
 
-        // Tratamento de erros
-        function handleError(error) {
-            const status = document.getElementById('status');
-            status.innerHTML = `<strong>ERRO</strong><br>${error.message}`;
-            status.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
-        }
+        // 5. TRATAMENTO DE ERROS
+        geolocate.on('error', (e) => {
+            document.getElementById('status').innerHTML = 
+                `<b style="color:red">ERRO:</b> ${e.message}`;
+        });
 
-        // Inicia monitoramento
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(
-                updatePosition,
-                handleError,
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-        } else {
-            document.getElementById('status').innerHTML = "GPS não suportado";
-        }
-
-        // Fallback se o mapa falhar
-        map.on('error', () => {
-            map.setStyle('https://demotiles.maplibre.org/style.json');
+        // 6. FORÇAR INÍCIO DO RASTREAMENTO
+        map.on('load', () => {
+            geolocate.trigger(); // Inicia imediatamente
         });
     </script>
 </body>
