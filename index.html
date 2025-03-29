@@ -6,11 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>GoMoto - Rastreamento</title>
     
-    <!-- MapLibre (alternativa gratuita ao Mapbox) -->
+    <!-- MapLibre -->
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     
-    <!-- Estilos Essenciais -->
     <style>
         body, html {
             margin: 0;
@@ -28,12 +27,12 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             padding: 8px 12px;
             border-radius: 4px;
             z-index: 1000;
             font-size: 14px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
     </style>
 </head>
@@ -42,98 +41,66 @@
     <div id="status">Carregando mapa...</div>
 
     <script>
-        // Configuração do Mapa
+        // Configuração do Mapa com estilo detalhado
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL', // Chave PÚBLICA
-            center: [-46.633, -23.550], // Coordenadas iniciais (São Paulo)
+            style: 'https://tiles.stadiamaps.com/styles/alidade_smooth.json', // ESTILO COM RUAS
+            center: [-46.633, -23.550],
             zoom: 14,
             maxZoom: 18
         });
 
-        // Controles do Mapa
+        // Controles
         map.addControl(new maplibregl.NavigationControl());
         map.addControl(new maplibregl.GeolocateControl({
-            positionOptions: {
-                enableHighAccuracy: true
-            },
+            positionOptions: { enableHighAccuracy: true },
             trackUserLocation: true
         }));
 
-        // Marcador Personalizado (ícone de moto)
+        // Marcador (ícone de moto)
         const el = document.createElement('div');
         el.className = 'moto-marker';
-        el.style.backgroundImage = 'url(icons/moto.png)';
-        el.style.width = '40px';
-        el.style.height = '40px';
-        el.style.backgroundSize = 'cover';
-
+        el.innerHTML = '🏍️'; // Ícone temporário (substitua por sua imagem)
+        el.style.fontSize = '30px';
+        el.style.textAlign = 'center';
+        
         const marker = new maplibregl.Marker(el)
             .setLngLat([-46.633, -23.550])
             .addTo(map);
 
-        // Atualização em Tempo Real
+        // Atualização de posição
         function updatePosition(position) {
             const lngLat = [position.coords.longitude, position.coords.latitude];
-            
-            // Atualiza marcador
             marker.setLngLat(lngLat);
+            map.flyTo({ center: lngLat, speed: 0.5 });
             
-            // Centraliza o mapa suavemente
-            map.flyTo({
-                center: lngLat,
-                speed: 0.5,
-                curve: 1
-            });
-            
-            // Atualiza status
             document.getElementById('status').innerHTML = `
-                <strong>Motoboy Ativo</strong><br>
-                Latitude: ${position.coords.latitude.toFixed(5)}<br>
-                Longitude: ${position.coords.longitude.toFixed(5)}<br>
-                Precisão: ${position.coords.accuracy.toFixed(1)} metros
+                <strong>MOTORISTA</strong><br>
+                ${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}<br>
+                Precisão: ${position.coords.accuracy.toFixed(1)}m
             `;
         }
 
-        // Tratamento de Erros
+        // Tratamento de erros
         function handleError(error) {
-            let errorMessage;
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMessage = "Localização bloqueada. Por favor, permita o acesso.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMessage = "Localização indisponível.";
-                    break;
-                case error.TIMEOUT:
-                    errorMessage = "Tempo de espera excedido.";
-                    break;
-                default:
-                    errorMessage = "Erro desconhecido: " + error.code;
-            }
-            document.getElementById('status').innerHTML = `<strong>ERRO:</strong> ${errorMessage}`;
+            const status = document.getElementById('status');
+            status.innerHTML = `<strong>ERRO</strong><br>${error.message}`;
+            status.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
         }
 
-        // Inicia Monitoramento
+        // Inicia monitoramento
         if (navigator.geolocation) {
-            document.getElementById('status').textContent = "Obtendo localização...";
-            
             navigator.geolocation.watchPosition(
                 updatePosition,
                 handleError,
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 10000,
-                    timeout: 5000
-                }
+                { enableHighAccuracy: true, timeout: 10000 }
             );
         } else {
-            document.getElementById('status').innerHTML = "<strong>ERRO:</strong> Seu navegador não suporta geolocalização.";
+            document.getElementById('status').innerHTML = "GPS não suportado";
         }
 
-        // Fallback se o mapa não carregar
+        // Fallback se o mapa falhar
         map.on('error', () => {
-            document.getElementById('status').innerHTML += "<br><strong>AVISO:</strong> Carregando mapa alternativo...";
             map.setStyle('https://demotiles.maplibre.org/style.json');
         });
     </script>
