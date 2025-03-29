@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Rastreamento de Motoboys</title>
+
+    <!-- Link para o manifesto (manifest.json) -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Registrar o Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(function(registration) {
+            console.log('Service Worker registrado com sucesso: ', registration);
+          })
+          .catch(function(error) {
+            console.log('Erro ao registrar o Service Worker: ', error);
+          });
+      }
+    </script>
+
+    <!-- Estilos do mapa -->
+    <style>
+      #map {
+        height: 100vh;
+        width: 100%;
+      }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Incluindo o Leaflet.js (biblioteca do mapa) -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <script>
+      // Criando o mapa e definindo a posição inicial
+      var map = L.map('map').setView([51.505, -0.09], 13); // Posição inicial (London)
+
+      // Adicionando o mapa do OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      // Função para obter a localização do motoboy
+      function updateLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude;
+            var lon = position.coords.longitude;
+
+            // Atualizando a posição do marcador (pino) no mapa
+            var marker = L.marker([lat, lon]).addTo(map);
+            map.setView([lat, lon], 13);
+
+            // Enviar as coordenadas para o servidor ou backend (aqui você pode fazer algo como salvar no banco de dados ou API)
+            console.log('Localização do motoboy:', lat, lon);
+          }, function(error) {
+            console.log('Erro ao obter localização:', error);
+          });
+        } else {
+          alert("Geolocalização não é suportada neste navegador.");
+        }
+      }
+
+      // Atualizando a localização a cada 10 segundos
+      setInterval(updateLocation, 10000); // Atualiza a cada 10 segundos
+    </script>
+</body>
+</html>
