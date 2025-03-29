@@ -1,49 +1,141 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rastreamento de Motoboys</title>
-    <!-- Leaflet CSS + JS (ATUALIZADOS) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Estilo ESSENCIAL para o mapa -->
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GoMoto - Rastreamento</title>
+    
+    <!-- MapLibre (alternativa gratuita ao Mapbox) -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    
+    <!-- Estilos Essenciais -->
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; }
-        #map { 
-            height: 100vh; 
-            width: 100vw;
-            position: fixed;
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            position: absolute;
             top: 0;
-            left: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 12px;
+            border-radius: 4px;
+            z-index: 1000;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div id="status">Carregando mapa...</div>
 
     <script>
-        // INICIALIZAÇÃO RÁPIDA E EFICIENTE
-        const map = L.map('map').setView([-15.788, -47.879], 15); // Coordenadas iniciais (exemplo: Brasília)
+        // Configuração do Mapa
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL', // Chave PÚBLICA
+            center: [-46.633, -23.550], // Coordenadas iniciais (São Paulo)
+            zoom: 14,
+            maxZoom: 18
+        });
 
-        // Camada de mapa TURBO (sem tiles faltando)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            maxZoom: 19,
-            subdomains: ['a', 'b', 'c'] // Evita tiles faltando
-        }).addTo(map);
+        // Controles do Mapa
+        map.addControl(new maplibregl.NavigationControl());
+        map.addControl(new maplibregl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true
+        }));
 
-        // Exemplo de rastreamento em tempo real (simulado)
-        setInterval(() => {
-            navigator.geolocation.getCurrentPosition(pos => {
-                const { latitude, longitude } = pos.coords;
-                L.marker([latitude, longitude])
-                    .addTo(map)
-                    .bindPopup("Motoboy aqui!")
-                    .openPopup();
-                map.setView([latitude, longitude], 15);
+        // Marcador Personalizado (ícone de moto)
+        const el = document.createElement('div');
+        el.className = 'moto-marker';
+        el.style.backgroundImage = 'url(icons/moto.png)';
+        el.style.width = '40px';
+        el.style.height = '40px';
+        el.style.backgroundSize = 'cover';
+
+        const marker = new maplibregl.Marker(el)
+            .setLngLat([-46.633, -23.550])
+            .addTo(map);
+
+        // Atualização em Tempo Real
+        function updatePosition(position) {
+            const lngLat = [position.coords.longitude, position.coords.latitude];
+            
+            // Atualiza marcador
+            marker.setLngLat(lngLat);
+            
+            // Centraliza o mapa suavemente
+            map.flyTo({
+                center: lngLat,
+                speed: 0.5,
+                curve: 1
             });
-        }, 5000); // Atualiza a cada 5 segundos
+            
+            // Atualiza status
+            document.getElementById('status').innerHTML = `
+                <strong>Motoboy Ativo</strong><br>
+                Latitude: ${position.coords.latitude.toFixed(5)}<br>
+                Longitude: ${position.coords.longitude.toFixed(5)}<br>
+                Precisão: ${position.coords.accuracy.toFixed(1)} metros
+            `;
+        }
+
+        // Tratamento de Erros
+        function handleError(error) {
+            let errorMessage;
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = "Localização bloqueada. Por favor, permita o acesso.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = "Localização indisponível.";
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = "Tempo de espera excedido.";
+                    break;
+                default:
+                    errorMessage = "Erro desconhecido: " + error.code;
+            }
+            document.getElementById('status').innerHTML = `<strong>ERRO:</strong> ${errorMessage}`;
+        }
+
+        // Inicia Monitoramento
+        if (navigator.geolocation) {
+            document.getElementById('status').textContent = "Obtendo localização...";
+            
+            navigator.geolocation.watchPosition(
+                updatePosition,
+                handleError,
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 10000,
+                    timeout: 5000
+                }
+            );
+        } else {
+            document.getElementById('status').innerHTML = "<strong>ERRO:</strong> Seu navegador não suporta geolocalização.";
+        }
+
+        // Fallback se o mapa não carregar
+        map.on('error', () => {
+            document.getElementById('status').innerHTML += "<br><strong>AVISO:</strong> Carregando mapa alternativo...";
+            map.setStyle('https://demotiles.maplibre.org/style.json');
+        });
     </script>
 </body>
 </html>
