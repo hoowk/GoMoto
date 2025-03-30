@@ -39,7 +39,7 @@
         // Mapa
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
+            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x', // AQUI SAI SUA CHAVE
             center: [-48.5487, -27.5928], // Florianópolis
             zoom: 14
         });
@@ -59,7 +59,7 @@
                     const lngLat = [pos.coords.longitude, pos.coords.latitude];
                     marker.setLngLat(lngLat);
                     map.flyTo({ center: lngLat, zoom: 16 });
-                    document.getElementById('status').innerHTML = `
+                    document.getElementById('status').innerHTML = ` 
                         <strong>MOTORISTA</strong><br>
                         ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
                         Precisão: ${pos.coords.accuracy.toFixed(0)}m
