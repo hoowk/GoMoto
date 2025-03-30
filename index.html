@@ -29,24 +29,21 @@
             background-size: contain;
             filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
         }
-        #btn-center {
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-            background: #007bff; color: white; border: none; padding: 10px;
-            cursor: pointer; border-radius: 5px; font-size: 14px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        #recenter {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #007BFF; color: white; border: none; padding: 10px 15px;
+            border-radius: 5px; cursor: pointer; font-size: 14px;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.3);
         }
-        #btn-center:hover { background: #0056b3; }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <div id="status">Iniciando rastreamento...</div>
-    <button id="btn-center">Voltar ao Motoboy</button>
+    <button id="recenter">Voltar ao Motoboy</button>
 
     <script>
         let userMovedMap = false;
-
-        // Mapa
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
@@ -54,26 +51,27 @@
             zoom: 14
         });
 
-        // Permitir movimentação do mapa
-        map.on('dragstart', () => userMovedMap = true);
-        
         // Marcador (moto.png)
         const el = document.createElement('div');
         el.className = 'moto-marker';
-        const marker = new maplibregl.Marker({
-            element: el,
-            anchor: 'bottom'
-        }).setLngLat([-48.5487, -27.5928]).addTo(map);
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([-48.5487, -27.5928]).addTo(map);
+        
+        // Detecta se o usuário moveu o mapa
+        map.on('movestart', () => { userMovedMap = true; });
 
         // GPS
+        let lastPosition = null;
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(
                 (pos) => {
                     const lngLat = [pos.coords.longitude, pos.coords.latitude];
                     marker.setLngLat(lngLat);
+                    lastPosition = lngLat;
+                    
                     if (!userMovedMap) {
                         map.flyTo({ center: lngLat, zoom: 16 });
                     }
+                    
                     document.getElementById('status').innerHTML = `
                         <strong>MOTORISTA</strong><br>
                         ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
@@ -81,18 +79,17 @@
                     `;
                 },
                 (err) => {
-                    document.getElementById('status').innerHTML = 
-                        `<strong style="color:red">ERRO:</strong> ${err.message}`;
+                    document.getElementById('status').innerHTML = `<strong style="color:red">ERRO:</strong> ${err.message}`;
                 },
                 { enableHighAccuracy: true }
             );
         }
 
-        // Botão para centralizar no motoboy
-        document.getElementById('btn-center').addEventListener('click', () => {
-            userMovedMap = false;
-            if (marker.getLngLat()) {
-                map.flyTo({ center: marker.getLngLat(), zoom: 16 });
+        // Botão para recentralizar
+        document.getElementById('recenter').addEventListener('click', () => {
+            if (lastPosition) {
+                userMovedMap = false;
+                map.flyTo({ center: lastPosition, zoom: 16 });
             }
         });
 
