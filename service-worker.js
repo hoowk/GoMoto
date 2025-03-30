@@ -4,7 +4,7 @@ const URLS_TO_CACHE = [
     '/index.html',
     '/icons/moto.png',
     '/icons/1moto.png',
-    'https://api.maptiler.com/maps/streets-v2/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
+    'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
     'https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css',
     'https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'
 ];
