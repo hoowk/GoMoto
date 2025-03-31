@@ -1,56 +1,57 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa</title>
-    <!-- Link para o CSS do Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        #map {
-            height: 100vh;
-        }
-    </style>
+    <title>GoMoto - Rastreamento</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Mapbox CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
 </head>
 <body>
-
     <div id="map"></div>
-
-    <!-- Script para o Leaflet -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script>
-        var map = L.map('map').setView([51.505, -0.09], 13); // Coordeadas iniciais do mapa
+        mapboxgl.accessToken = 'SUA_CHAVE_DO_MAPBOX_AQUI';
 
-        // Adiciona o tileLayer (padrão do Leaflet)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-46.6333, -23.5505], // Latitude e longitude padrão (São Paulo)
+            zoom: 13
+        });
 
-        // Adiciona um marcador
-        var marker = L.marker([51.5, -0.09]).addTo(map)
-            .bindPopup("<b>Hello world!</b><br>I am a popup.")
-            .openPopup();
+        // Criar um marcador personalizado
+        const marker = new mapboxgl.Marker({
+            color: 'red' // Muda a cor do pino
+        })
+        .setLngLat([-46.6333, -23.5505]) // Coordenadas iniciais
+        .addTo(map);
 
-        // Função para acompanhar a localização
-        function onLocationFound(e) {
-            var radius = e.accuracy / 2;
-
-            L.marker(e.latlng).addTo(map)
-                .bindPopup("You are within " + radius + " meters from this point")
-                .openPopup();
-
-            L.circle(e.latlng, radius).addTo(map);
+        // Atualizar localização em tempo real
+        function updateLocation(position) {
+            const { latitude, longitude } = position.coords;
+            marker.setLngLat([longitude, latitude]);
+            map.setCenter([longitude, latitude]);
         }
 
-        // Função para erro de localização
-        function onLocationError(e) {
-            alert(e.message);
+        function errorHandler(error) {
+            console.error('Erro ao obter localização:', error);
         }
 
-        // Ativa o rastreamento da localização
-        map.locate({setView: true, maxZoom: 16});
-        map.on('locationfound', onLocationFound);
-        map.on('locationerror', onLocationError);
+        function trackLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(updateLocation, errorHandler, {
+                    enableHighAccuracy: true
+                });
+            } else {
+                alert('Geolocalização não suportada pelo seu navegador.');
+            }
+        }
+
+        trackLocation();
     </script>
 </body>
 </html>
