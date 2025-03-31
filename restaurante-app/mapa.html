@@ -72,6 +72,28 @@
             font-weight: bold;
             margin-bottom: 10px;
         }
+        #search-container {
+            display: flex;
+            align-items: center;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            box-sizing: border-box;
+        }
+        #search-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        #search-button:hover {
+            background: #c0392b;
+        }
     </style>
 </head>
 <body>
@@ -83,7 +105,10 @@
     </div>
     
     <div id="search">
-        <input type="text" id="search-input" placeholder="Buscar motoboy..." style="width: 100%; padding: 8px;">
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="Buscar motoboy...">
+            <button id="search-button">🔍</button>
+        </div>
     </div>
     
     <div id="map"></div>
@@ -94,15 +119,15 @@
             window.location.href = "login.html";
         }
 
-        // Configurações
+        // Configurações (ATUALIZE COM SUAS COORDENADAS REAIS!)
         const restauranteId = "jap-sushi-01";
         const restauranteNome = "Jap Sushi";
-        const restaurantePosicao = [-48.5487, -27.5928]; // Substitua pelas coordenadas reais
+        const restaurantePosicao = [-46.6395, -23.5497]; // Exemplo: São Paulo
 
-        // Mapa
+        // Mapa (QUALIDADE ALTA)
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
+            style: 'https://api.maptiler.com/maps/hybrid/style.json?key=kEB2a1outAjGbGUoNn6x',
             center: restaurantePosicao,
             zoom: 15
         });
@@ -152,15 +177,20 @@
         }
 
         // Busca de motoboys
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
+        document.getElementById('search-button').addEventListener('click', buscarMotoboy);
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') buscarMotoboy();
+        });
+
+        function buscarMotoboy() {
+            const term = document.getElementById('search-input').value.toLowerCase();
             const items = document.querySelectorAll('.motoboy-item');
             
             items.forEach(item => {
                 const text = item.textContent.toLowerCase();
                 item.style.display = text.includes(term) ? 'block' : 'none';
             });
-        });
+        }
 
         // Recebe atualizações do servidor
         socket.on('location-update', (data) => {
