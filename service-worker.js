@@ -4,6 +4,7 @@ const ASSETS_TO_CACHE = [
   '/index.html',
   '/login.html',
   '/styles.css',
+  '/icons/logomoto.png',
   '/icons/moto.png',
   'https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css',
   'https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js',
@@ -31,25 +32,28 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'UPDATE_LOCATION') {
-    // Simulação de envio para o servidor
     const { nome, position } = event.data.data;
     console.log(`Atualizando localização de ${nome}:`, position);
     
-    // Aqui você faria a chamada real para seu backend
-    // Exemplo com fetch:
+    // Simulação de envio para o servidor
+    const dadosParaEnviar = {
+      motoboy: nome,
+      latitude: position.lat,
+      longitude: position.lng,
+      accuracy: position.accuracy,
+      timestamp: position.timestamp
+    };
+    
+    // Exemplo de como seria com fetch (descomente para usar)
     /*
     fetch('https://seuservidor.com/api/location', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        motoboy: nome,
-        latitude: position.lat,
-        longitude: position.lng,
-        accuracy: position.accuracy,
-        timestamp: position.timestamp
-      })
+      body: JSON.stringify(dadosParaEnviar)
+    }).catch(err => {
+      console.error('Erro ao enviar localização:', err);
     });
     */
   }
