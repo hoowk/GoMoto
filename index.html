@@ -1,20 +1,59 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa do Motoboy</title>
-    <link rel="stylesheet" href="style.css">
+    <title>GoMoto - Motoboy</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="firebase.js"></script>
+
+    <style>
+        body { font-family: Arial; text-align: center; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; }
+        #status { font-weight: bold; margin: 20px; }
+    </style>
 </head>
 <body>
-
-    <div id="map"></div>
+    <h1>GoMoto</h1>
+    <div id="status">Desconectado</div>
     
-    <div class="buttons">
-        <button id="toggleLocation">Ativar Localização</button>
-        <button id="backToDriver">Voltar para Motoboy</button>
-    </div>
-
-    <script src="script.js"></script>
+    <button onclick="login()">Entrar com Google</button>
+    <button onclick="toggleTracking()" id="trackBtn" disabled>Iniciar Rastreamento</button>
+    
+    <script>
+        let isTracking = false;
+        
+        function toggleTracking() {
+            isTracking = !isTracking;
+            const btn = document.getElementById('trackBtn');
+            
+            if (isTracking) {
+                btn.textContent = "Parar Rastreamento";
+                navigator.geolocation.watchPosition(updateLocation);
+            } else {
+                btn.textContent = "Iniciar Rastreamento";
+            }
+        }
+        
+        function updateLocation(pos) {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                firebase.database().ref('motoboys/' + user.uid).set({
+                    nome: user.displayName,
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    timestamp: Date.now()
+                });
+            }
+        }
+        
+        function login() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider).then(user => {
+                document.getElementById('status').textContent = `Olá, ${user.user.displayName}!`;
+                document.getElementById('trackBtn').disabled = false;
+            });
+        }
+    </script>
 </body>
 </html>
