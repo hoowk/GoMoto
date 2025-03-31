@@ -10,20 +10,25 @@ const io = socketio(server, {
   }
 });
 
-// Armazena os dados
+// Dados armazenados
 const motoboys = {};
 const restaurantes = {};
 
 io.on('connection', (socket) => {
+  console.log('Novo cliente conectado:', socket.id);
+
   // Login do Motoboy
   socket.on('motoboy-login', (data) => {
-    const { motoboyId, restauranteId } = data;
+    const { motoboyId, restauranteId, nome } = data;
+    
     motoboys[motoboyId] = {
       ...data,
       socketId: socket.id,
-      restauranteId
+      restauranteId,
+      nome
     };
-    console.log(`Motoboy ${motoboyId} conectado ao restaurante ${restauranteId}`);
+    
+    console.log(`Motoboy ${motoboyId} (${nome}) vinculado ao restaurante ${restauranteId}`);
   });
 
   // Login do Restaurante
@@ -36,11 +41,15 @@ io.on('connection', (socket) => {
   // Atualização de localização
   socket.on('update-location', (data) => {
     const motoboy = motoboys[data.motoboyId];
+    
     if (motoboy) {
       io.to(motoboy.restauranteId).emit('location-update', {
         motoboyId: data.motoboyId,
+        nome: motoboy.nome,
         position: data.position
       });
+      
+      console.log(`Localização atualizada para motoboy ${data.motoboyId}`);
     }
   });
 
