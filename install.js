@@ -2,32 +2,36 @@
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-  // Impede o prompt automático
   e.preventDefault();
   deferredPrompt = e;
   
-  // Mostra um botão de instalação (opcional)
-  const installButton = document.createElement('button');
-  installButton.textContent = 'Instalar App';
-  installButton.style.position = 'fixed';
-  installButton.style.bottom = '20px';
-  installButton.style.left = '50%';
-  installButton.style.transform = 'translateX(-50%)';
-  installButton.style.padding = '10px 20px';
-  installButton.style.background = '#4CAF50';
-  installButton.style.color = 'white';
-  installButton.style.border = 'none';
-  installButton.style.borderRadius = '5px';
-  installButton.style.zIndex = '1000';
+  // Mostra botão de instalação (opcional)
+  const installBtn = document.createElement('button');
+  installBtn.innerHTML = '📲 Instalar App';
+  installBtn.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  `;
   
-  installButton.addEventListener('click', () => {
+  installBtn.addEventListener('click', () => {
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(() => {
-      deferredPrompt = null;
+      installBtn.remove();
     });
   });
   
-  document.body.appendChild(installButton);
+  document.body.appendChild(installBtn);
 });
 
 window.addEventListener('appinstalled', () => {
