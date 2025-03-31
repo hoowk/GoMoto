@@ -1,24 +1,24 @@
-const CACHE_NAME = 'gomoto-v1';
+const CACHE_NAME = 'gomoto-cache-v2';
 const ASSETS = [
   './',
   './index.html',
   './login.html',
-  './icons/logomoto-192x192.png',
+  './icons/logomoto128.png',
   './icons/moto.png',
   'https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css',
   'https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
+self.addEventListener('install', (event) => {
+  event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
+      .then((cache) => cache.addAll(ASSETS))
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request)
-      .then(res => res || fetch(e.request))
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => response || fetch(event.request))
   );
 });
