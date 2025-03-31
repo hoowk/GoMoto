@@ -1,40 +1,35 @@
-/* Estilos para a página de login */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f2f2f2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
+body, html { margin: 0; padding: 0; overflow: hidden; font-family: Arial; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+#status {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(255,255,255,0.9);
+    padding: 8px 12px; border-radius: 4px;
+    z-index: 1000; font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-
+.toggle-container {
+    position: absolute; bottom: 20px; left: 20px;
+    display: flex; align-items: center;
+    background: white; padding: 10px; border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: red; transition: .4s; border-radius: 34px;
+}
+.slider:before {
+    position: absolute; content: ""; height: 14px; width: 14px;
+    left: 3px; bottom: 3px; background-color: white; transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .slider { background-color: green; }
+input:checked + .slider:before { transform: translateX(20px); }
 .login-container {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100vh;
 }
-
-button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-/* Estilos para o mapa */
-#map {
-    height: 100vh;
-    width: 100%;
-    margin: 0;
+.login-container input, .login-container button {
+    margin: 5px; padding: 10px; width: 80%;
 }
