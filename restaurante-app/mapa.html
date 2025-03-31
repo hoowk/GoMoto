@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa - GoMoto Restaurante</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            overflow: hidden;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #header {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        .moto-marker {
+            width: 30px;
+            height: 30px;
+            background-image: url('../motoboy-app/icons/moto.png');
+            background-size: contain;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h3>Restaurante: <span id="nome-restaurante"></span></h3>
+        <div id="motoboys-ativos"></div>
+    </div>
+    <div id="map"></div>
+
+    <script>
+        // Verifica se está logado
+        if (!localStorage.getItem("restauranteAutenticado")) {
+            window.location.href = "login.html";
+        }
+
+        // Mostra ID do restaurante
+        document.getElementById("nome-restaurante").textContent = 
+            localStorage.getItem("restauranteId");
+
+        // Mapa
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
+            center: [-48.5487, -27.5928],
+            zoom: 13
+        });
+
+        // Conexão com o servidor
+        const socket = io('https://gomoto-server.onrender.com', {
+            query: {
+                restauranteId: localStorage.getItem("restauranteId")
+            }
+        });
+
+        const markers = {};
+
+        socket.on('location-update', (data) => {
+            // Atualiza marcadores no mapa
+            if (!markers[data.motoboyId]) {
+                const el = document.createElement('div');
+                el.className = 'moto-marker';
+                markers[data.motoboyId] = new maplibregl.Marker(el)
+                    .setLngLat([data.position.lng, data.position.lat])
+                    .addTo(map);
+                
+                // Atualiza lista de motoboys
+                const list = document.getElementById("motoboys-ativos");
+                const item = document.createElement('div');
+                item.textContent = `Motoboy: ${data.motoboyId}`;
+                list.appendChild(item);
+            } else {
+                markers[data.motoboyId].setLngLat([data.position.lng, data.position.lat]);
+            }
+        });
+    </script>
+</body>
+</html>
