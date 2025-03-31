@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - GoMoto</title>
+    <link rel="icon" href="icons/logomoto.png" type="image/png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -101,15 +103,15 @@
         }
         
         .logo {
-            width: 80px;
+            width: 120px;
+            height: auto;
             margin-bottom: 20px;
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
     <div class="login-container">
-        <img src="https://via.placeholder.com/80x80?text=GoMoto" alt="Logo" class="logo">
+        <img src="icons/logomoto.png" alt="Logo GoMoto" class="logo">
         <h2>Login do Motoboy</h2>
         <div class="input-group">
             <i class="fas fa-user"></i>
@@ -136,7 +138,6 @@
             }
         }
         
-        // Verificar se já está logado
         if (localStorage.getItem("motoboyNome") && localStorage.getItem("tracking") === "true") {
             window.location.href = "index.html";
         }
