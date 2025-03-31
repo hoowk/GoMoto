@@ -1,66 +1,45 @@
-const CACHE_NAME = 'gomoto-cache-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/styles.css',
-  '/icons/logomoto.png',
-  '/icons/moto.png',
-  'https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css',
-  'https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js',
+const CACHE_NAME = 'gomoto-v3';
+const ASSETS = [
+  './',
+  './index.html',
+  './login.html',
+  './install.js',
+  './icons/logomoto-192x192.png',
+  './icons/moto.png',
   'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
+self.addEventListener('install', (e) => {
+  e.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(ASSETS_TO_CACHE);
-      })
+      .then(cache => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        return response || fetch(event.request);
-      })
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      );
+    })
   );
 });
 
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'UPDATE_LOCATION') {
-    const { nome, position } = event.data.data;
-    console.log(`Atualizando localização de ${nome}:`, position);
-    
-    // Simulação de envio para o servidor
-    const dadosParaEnviar = {
-      motoboy: nome,
-      latitude: position.lat,
-      longitude: position.lng,
-      accuracy: position.accuracy,
-      timestamp: position.timestamp
-    };
-    
-    // Exemplo de como seria com fetch (descomente para usar)
-    /*
-    fetch('https://seuservidor.com/api/location', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(dadosParaEnviar)
-    }).catch(err => {
-      console.error('Erro ao enviar localização:', err);
-    });
-    */
-  }
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request)
+      .then(res => res || fetch(e.request))
+  );
 });
 
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-location') {
-    console.log('Sincronizando localização em segundo plano');
+self.addEventListener('message', (e) => {
+  if (e.data.type === 'UPDATE_LOCATION') {
+    const { nome, position } = e.data.data;
+    // Simulação de envio para backend
+    console.log(`📍 ${nome}: ${position.lat}, ${position.lng}`);
   }
 });
