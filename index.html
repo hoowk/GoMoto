@@ -102,7 +102,7 @@
         // Vincula ao restaurante (substitua "ID_DO_RESTAURANTE" pelo ID real)
         socket.emit('motoboy-login', {
             motoboyId: motoboyId,
-            restauranteId: "ID_DO_RESTAURANTE", // Temporário - depois substitua por um QR Code
+            restauranteId: "ID_DO_RESTAURANTE",
             nome: nomeMotoboy
         });
 
@@ -133,11 +133,16 @@
             this.classList.toggle('active', tracking);
             localStorage.setItem("tracking", tracking.toString());
             
-            // ALTERAÇÃO CRÍTICA: Logout ao desligar localização
+            // CORREÇÃO: LOGOUT FORÇADO AO DESLIGAR LOCALIZAÇÃO
             if (!tracking) {
+                // Limpa dados de login
                 localStorage.removeItem("motoboyNome");
                 localStorage.removeItem("motoboyId");
-                window.location.href = "login.html"; // Força retorno ao login
+                localStorage.removeItem("tracking");
+                
+                // Redireciona IMEDIATAMENTE para login.html
+                window.location.href = "login.html";
+                return; // Interrompe o código aqui
             } else {
                 document.getElementById('status').textContent = `${nomeMotoboy} - Aguardando localização...`;
             }
