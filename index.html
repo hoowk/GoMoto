@@ -1,196 +1,34 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoMoto - Motoboy</title>
-    <link rel="manifest" href="./manifest.json">
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
-    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            font-family: Arial, sans-serif; 
-            overflow: hidden; 
-        }
-        #map { 
-            position: absolute; 
-            top: 0; 
-            bottom: 0; 
-            width: 100%; 
-        }
-        #status {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255,255,255,0.95);
-            padding: 10px 15px;
-            border-radius: 8px;
-            z-index: 1000;
-            font-size: 14px;
-            max-width: 80%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .toggle-container {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.95);
-            padding: 10px;
-            border-radius: 8px;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .toggle-label {
-            margin-right: 10px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        .toggle-button {
-            display: inline-block;
-            width: 50px;
-            height: 25px;
-            background: #ff4444;
-            border-radius: 12px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .toggle-button.active {
-            background: #00C851;
-        }
-        .toggle-circle {
-            width: 21px;
-            height: 21px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            transition: 0.3s;
-        }
-        .toggle-button.active .toggle-circle {
-            left: 27px;
-        }
-        .moto-marker {
-            width: 40px;
-            height: 40px;
-            background-image: url('./icons/moto.png');
-            background-size: contain;
-            filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.4));
-        }
-        .coordinates {
-            font-size: 12px;
-            color: #555;
-            margin-top: 5px;
-        }
-    </style>
+    <!-- ... (mantenha todo o cabeçalho original) ... -->
 </head>
 <body>
-    <div id="map"></div>
-    <div id="status">
-        <div id="motoboy-name"></div>
-        <div id="coordinates" class="coordinates"></div>
-    </div>
-    <div class="toggle-container">
-        <span class="toggle-label">LOCALIZAÇÃO</span>
-        <div id="toggle" class="toggle-button"><div class="toggle-circle"></div></div>
-    </div>
+    <!-- ... (mantenha todo o HTML original) ... -->
 
     <script>
-        // Verifica login
-        const nomeMotoboy = localStorage.getItem("motoboyNome");
-        if (!nomeMotoboy) {
+        // VERIFICAÇÃO DE LOGIN COMPLETA (nome E senha)
+        if (!localStorage.getItem("motoboyNome") || !localStorage.getItem("motoboySenha")) {
             window.location.href = "login.html";
         }
 
-        // Atualiza nome do motoboy
-        document.getElementById("motoboy-name").textContent = nomeMotoboy.toUpperCase();
-
-        // Conexão com o servidor
-        const socket = io('https://gomoto-server.onrender.com');
-        
-        // Vincula ao restaurante
-        socket.emit('motoboy-login', {
-            motoboyId: localStorage.getItem("motoboyId") || 'motoboy-' + Math.random().toString(36).substr(2, 9),
-            restauranteId: "jap-sushi-01",
-            nome: nomeMotoboy
-        });
-
-        // Mapa
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
-            center: [-48.5487, -27.5928],
-            zoom: 14
-        });
-
-        // Marcador personalizado (usando seu moto.png)
-        const el = document.createElement('div');
-        el.className = 'moto-marker';
-        const marker = new maplibregl.Marker({ 
-            element: el,
-            anchor: 'bottom'
-        }).setLngLat([-48.5487, -27.5928]).addTo(map);
-
-        // Controle de rastreamento
-        let tracking = localStorage.getItem("tracking") === "true";
-        updateToggleStatus();
+        // ... (mantenha todo o resto do código original) ...
 
         document.getElementById('toggle').addEventListener('click', function() {
             tracking = !tracking;
+            this.classList.toggle('active', tracking);
             localStorage.setItem("tracking", tracking.toString());
-            updateToggleStatus();
             
             if (!tracking) {
-                // Logout ao desligar
+                // Limpa TODOS os dados ao deslogar
                 localStorage.removeItem("motoboyNome");
+                localStorage.removeItem("motoboySenha");
                 localStorage.removeItem("motoboyId");
                 window.location.href = "login.html";
             }
         });
 
-        function updateToggleStatus() {
-            const toggle = document.getElementById('toggle');
-            toggle.classList.toggle('active', tracking);
-            document.getElementById("coordinates").textContent = tracking ? 
-                "Aguardando localização..." : "Localização desativada";
-        }
-
-        // Geolocalização
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(
-                (pos) => {
-                    if (tracking) {
-                        const lngLat = [pos.coords.longitude, pos.coords.latitude];
-                        marker.setLngLat(lngLat);
-                        map.flyTo({ center: lngLat, zoom: 16 });
-                        
-                        // Atualiza coordenadas
-                        document.getElementById("coordinates").innerHTML = `
-                            ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
-                            Precisão: ${pos.coords.accuracy.toFixed(0)}m
-                        `;
-                    }
-                },
-                (err) => {
-                    document.getElementById("coordinates").innerHTML = 
-                        `<span style="color:red">ERRO: ${err.message}</span>`;
-                },
-                { 
-                    enableHighAccuracy: true,
-                    maximumAge: 10000,
-                    timeout: 5000
-                }
-            );
-        } else {
-            document.getElementById("coordinates").textContent = 
-                "Geolocalização não suportada pelo navegador";
-        }
+        // ... (continue com o resto do código) ...
     </script>
 </body>
 </html>
