@@ -5,234 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoMoto - Rastreamento</title>
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#4CAF50">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-    <script src="./install.js" defer></script>
     <style>
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            font-family: 'Poppins', sans-serif; 
-        }
-        #map { 
-            position: absolute; 
-            top: 0; 
-            bottom: 0; 
-            width: 100%; 
-        }
+        body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         #status {
-            position: absolute; 
-            top: 10px; 
-            left: 10px;
+            position: absolute; top: 10px; left: 10px;
             background: rgba(255,255,255,0.9);
-            padding: 10px 15px; 
-            border-radius: 8px;
-            z-index: 1000; 
-            font-size: 14px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            max-width: 80%;
-        }
-        .moto-marker {
-            width: 40px; 
-            height: 40px;
-            background-image: url('./icons/moto.png');
-            background-size: contain;
-            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
+            padding: 10px; border-radius: 8px;
+            z-index: 1000; font-size: 14px;
         }
         .toggle-container {
-            position: absolute; 
-            top: 10px; 
-            right: 10px;
+            position: absolute; top: 10px; right: 10px;
             background: rgba(255,255,255,0.9);
-            padding: 10px; 
-            border-radius: 8px;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-        }
-        .toggle-label {
-            margin-right: 10px;
-            font-size: 14px;
-            font-weight: 500;
+            padding: 10px; border-radius: 8px;
+            z-index: 1000; display: flex; align-items: center;
         }
         .toggle-button {
-            display: inline-block;
-            width: 50px; 
-            height: 25px;
-            background: #ff4444;
-            border-radius: 12px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.3s;
+            width: 50px; height: 25px;
+            background: #ff4444; border-radius: 12px;
+            position: relative; cursor: pointer;
+            margin-left: 10px;
         }
-        .toggle-button.active {
-            background: #00C851;
-        }
+        .toggle-button.active { background: #00C851; }
         .toggle-circle {
-            width: 21px; 
-            height: 21px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px; 
-            left: 2px;
+            width: 21px; height: 21px;
+            background: white; border-radius: 50%;
+            position: absolute; top: 2px; left: 2px;
             transition: 0.3s;
         }
-        .toggle-button.active .toggle-circle {
-            left: 27px;
-        }
-        .user-info {
-            position: absolute;
-            top: 60px;
-            right: 10px;
-            background: rgba(255,255,255,0.9);
-            padding: 8px 12px;
-            border-radius: 8px;
-            z-index: 1000;
-            font-size: 14px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+        .toggle-button.active .toggle-circle { left: 27px; }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    <div id="status">Carregando mapa...</div>
+    <div id="status">Carregando...</div>
     <div class="toggle-container">
-        <span class="toggle-label">Localização</span>
+        <span>Localização</span>
         <div id="toggle" class="toggle-button"><div class="toggle-circle"></div></div>
     </div>
-    <div class="user-info" id="userInfo"></div>
 
     <script>
-        // Verificar login
-        const nomeMotoboy = localStorage.getItem("motoboyNome");
-        if (!nomeMotoboy) {
+        // Verifica login
+        if (!localStorage.getItem("motoboyNome")) {
             window.location.href = "login.html";
         }
-        
-        // Atualizar UI com nome do motoboy
-        document.getElementById("userInfo").textContent = nomeMotoboy;
-        
-        // Inicializar mapa
+
+        // Mapa
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
             center: [-48.5487, -27.5928],
             zoom: 14
         });
-        
-        // Criar marcador
-        const el = document.createElement('div');
-        el.className = 'moto-marker';
-        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-            .setLngLat([-48.5487, -27.5928])
-            .addTo(map);
-        
-        // Verificar estado do toggle
+
+        // Controle de localização
         let tracking = localStorage.getItem("tracking") === "true";
         document.getElementById('toggle').classList.toggle('active', tracking);
-        
-        // Atualizar status inicial
-        document.getElementById('status').innerHTML = tracking ? 
-            `<strong>${nomeMotoboy}</strong><br>Aguardando localização...` :
-            `<strong>${nomeMotoboy}</strong><br>Localização desativada`;
-        
-        // Configurar Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./service-worker.js').then(registration => {
-                console.log('ServiceWorker registrado com sucesso:', registration.scope);
-            }).catch(error => {
-                console.log('Falha ao registrar ServiceWorker:', error);
-            });
-        }
-        
-        // Controle do toggle
+
         document.getElementById('toggle').addEventListener('click', function() {
             tracking = !tracking;
             this.classList.toggle('active', tracking);
             localStorage.setItem("tracking", tracking.toString());
             
             if (!tracking) {
-                // Deslogar ao desativar
                 localStorage.removeItem("motoboyNome");
-                localStorage.removeItem("tracking");
                 window.location.href = "login.html";
-            } else {
-                document.getElementById('status').innerHTML = `<strong>${nomeMotoboy}</strong><br>Aguardando localização...`;
             }
         });
-        
-        // Monitorar localização
+
+        // Atualiza localização
         if (navigator.geolocation) {
-            const watchId = navigator.geolocation.watchPosition(
+            navigator.geolocation.watchPosition(
                 (pos) => {
                     if (tracking) {
                         const lngLat = [pos.coords.longitude, pos.coords.latitude];
-                        marker.setLngLat(lngLat);
+                        new maplibregl.Marker().setLngLat(lngLat).addTo(map);
                         map.flyTo({ center: lngLat, zoom: 16 });
-                        
-                        // Atualizar status
                         document.getElementById('status').innerHTML = `
-                            <strong>${nomeMotoboy}</strong><br>
+                            <strong>${localStorage.getItem("motoboyNome")}</strong><br>
                             ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
-                            Precisão: ${pos.coords.accuracy.toFixed(0)}m<br>
-                            ${new Date().toLocaleTimeString()}
+                            Precisão: ${pos.coords.accuracy.toFixed(0)}m
                         `;
-                        
-                        // Enviar localização para o servidor (simulado)
-                        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                            navigator.serviceWorker.controller.postMessage({
-                                type: 'UPDATE_LOCATION',
-                                data: {
-                                    nome: nomeMotoboy,
-                                    position: {
-                                        lat: pos.coords.latitude,
-                                        lng: pos.coords.longitude,
-                                        accuracy: pos.coords.accuracy,
-                                        timestamp: Date.now()
-                                    }
-                                }
-                            });
-                        }
                     }
                 },
                 (err) => {
-                    document.getElementById('status').innerHTML = 
-                        `<strong style="color:red">ERRO:</strong> ${err.message}`;
+                    document.getElementById('status').textContent = `Erro: ${err.message}`;
                 },
-                { 
-                    enableHighAccuracy: true,
-                    maximumAge: 10000,
-                    timeout: 5000
-                }
+                { enableHighAccuracy: true }
             );
-            
-            // Limpar watchPosition ao sair
-            window.addEventListener('beforeunload', () => {
-                if (!tracking) {
-                    navigator.geolocation.clearWatch(watchId);
-                }
-            });
-        } else {
-            document.getElementById('status').innerHTML = 
-                '<strong style="color:red">ERRO:</strong> Geolocalização não suportada pelo navegador';
-        }
-
-        // Forçar atualização do Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.getRegistrations().then(registrations => {
-                    registrations.forEach(registration => {
-                        registration.unregister().then(() => {
-                            console.log('ServiceWorker desregistrado');
-                            window.location.reload();
-                        });
-                    });
-                });
-            });
         }
     </script>
 </body>
