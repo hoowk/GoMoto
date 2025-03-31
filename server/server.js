@@ -5,70 +5,43 @@ const http = require('http');
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
-  cors: {
-    origin: "*"
-  }
+  cors: { origin: "*" }
 });
 
-// Dados armazenados
 const motoboys = {};
-const restaurantes = {};
 
 io.on('connection', (socket) => {
-  console.log('Novo cliente conectado:', socket.id);
+  console.log('🔌 Nova conexão:', socket.id);
 
-  // Login do Motoboy
+  // Vincula motoboy ao restaurante
   socket.on('motoboy-login', (data) => {
-    const { motoboyId, restauranteId, nome } = data;
-    
-    motoboys[motoboyId] = {
+    motoboys[data.motoboyId] = {
       ...data,
-      socketId: socket.id,
-      restauranteId,
-      nome
+      socketId: socket.id
     };
-    
-    console.log(`Motoboy ${motoboyId} (${nome}) vinculado ao restaurante ${restauranteId}`);
+    console.log(`🛵 ${data.nome} conectado ao Jap Sushi`);
   });
 
-  // Login do Restaurante
-  socket.on('restaurante-login', (restauranteId) => {
-    socket.join(restauranteId);
-    restaurantes[restauranteId] = socket.id;
-    console.log(`Restaurante ${restauranteId} conectado`);
-  });
-
-  // Atualização de localização
+  // Atualiza localização
   socket.on('update-location', (data) => {
     const motoboy = motoboys[data.motoboyId];
-    
     if (motoboy) {
       io.to(motoboy.restauranteId).emit('location-update', {
         motoboyId: data.motoboyId,
         nome: motoboy.nome,
         position: data.position
       });
-      
-      console.log(`Localização atualizada para motoboy ${data.motoboyId}`);
     }
   });
 
-  // Desconexão
-  socket.on('disconnect', () => {
-    console.log(`Cliente desconectado: ${socket.id}`);
-    
-    // Remove motoboy desconectado
-    for (const [id, motoboy] of Object.entries(motoboys)) {
-      if (motoboy.socketId === socket.id) {
-        delete motoboys[id];
-        console.log(`Motoboy ${id} removido`);
-        break;
-      }
-    }
+  // Restaurante conectado
+  socket.on('restaurante-login', (restauranteId) => {
+    socket.join(restauranteId);
+    console.log(`🍣 ${restauranteId} pronto para receber dados`);
   });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`🚀 Servidor ouvindo na porta ${PORT}`);
 });
