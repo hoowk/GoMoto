@@ -3,93 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoMoto - Rastreamento</title>
-    
-    <!-- PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-    
-    <!-- MapLibre -->
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
-    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-    
-    <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; font-family: Arial; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-        #status {
-            position: absolute; top: 10px; left: 10px;
-            background: rgba(255,255,255,0.9);
-            padding: 8px 12px; border-radius: 4px;
-            z-index: 1000; font-size: 14px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .moto-marker {
-            width: 40px; height: 40px;
-            background-image: url('icons/moto.png');  /* Ícone do marcador */
-            background-size: contain;
-            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
-        }
-    </style>
+    <title>Login - GoMoto</title>
 </head>
 <body>
-    <div id="map"></div>
-    <div id="status">Iniciando rastreamento...</div>
-    <button id="toggleTracking">Desligar Rastreamento</button>
+    <h1>Login do Motoboy</h1>
+    <form id="loginForm">
+        <label for="motoboyNome">Nome do Motoboy:</label>
+        <input type="text" id="motoboyNome" required>
+        <label for="motoboySenha">Senha:</label>
+        <input type="password" id="motoboySenha" required>
+        <button type="submit">Entrar</button>
+    </form>
 
     <script>
-        let trackingEnabled = true;
-        let motoboyNome = localStorage.getItem('motoboyNome') || 'MOTORISTA';
-        document.getElementById('status').innerHTML = `<strong>${motoboyNome}</strong><br>Aguardando posição...`;
-        
-        // Mapa
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
-            center: [-48.5487, -27.5928], // Florianópolis
-            zoom: 14
-        });
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+            event.preventDefault();
 
-        // Marcador (moto.png)
-        const el = document.createElement('div');
-        el.className = 'moto-marker';
-        const marker = new maplibregl.Marker({
-            element: el,
-            anchor: 'bottom'
-        }).setLngLat([-48.5487, -27.5928]).addTo(map);
+            let nome = document.getElementById("motoboyNome").value;
+            let senha = document.getElementById("motoboySenha").value;
 
-        // GPS
-        function trackPosition(position) {
-            if (trackingEnabled) {
-                const lngLat = [position.coords.longitude, position.coords.latitude];
-                marker.setLngLat(lngLat);
-                map.flyTo({ center: lngLat, zoom: 16 });
-                document.getElementById('status').innerHTML = `
-                    <strong>${motoboyNome}</strong><br>
-                    ${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}<br>
-                    Precisão: ${position.coords.accuracy.toFixed(0)}m
-                `;
-            }
-        }
-
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(trackPosition, (err) => {
-                document.getElementById('status').innerHTML = 
-                    `<strong style="color:red">ERRO:</strong> ${err.message}`;
-            }, { enableHighAccuracy: true });
-        }
-
-        document.getElementById('toggleTracking').addEventListener('click', () => {
-            trackingEnabled = !trackingEnabled;
-            if (!trackingEnabled) {
-                localStorage.removeItem('motoboyNome');
-                window.location.href = 'login.html';
+            // Verifica se a senha está correta (para simplificação, vou deixar em branco)
+            if (senha) {
+                // Salva o nome do motoboy no localStorage
+                localStorage.setItem("motoboyNome", nome);
+                // Redireciona para o mapa
+                window.location.href = "index.html";
+            } else {
+                alert("Senha inválida");
             }
         });
-
-        // PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js');
-        }
     </script>
 </body>
 </html>
