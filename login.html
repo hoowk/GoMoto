@@ -4,9 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - GoMoto</title>
-    <link rel="icon" href="icons/logomoto.png" type="image/png">
+    <!-- Metatags PWA -->
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Favicon e ícones -->
+    <link rel="icon" href="./icons/logomoto-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="./icons/logomoto-192x192.png">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Fontes e ícones -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    
+    <!-- Script de instalação -->
+    <script src="./install.js" defer></script>
+    
     <style>
         * {
             margin: 0;
@@ -23,6 +39,7 @@
             background: url('https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
             background-size: cover;
             position: relative;
+            padding: 20px;
         }
         
         body::before {
@@ -37,21 +54,28 @@
         
         .login-container {
             position: relative;
-            width: 90%;
+            width: 100%;
             max-width: 400px;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             text-align: center;
             z-index: 1;
             backdrop-filter: blur(5px);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .login-container h2 {
             color: #333;
             margin-bottom: 25px;
             font-weight: 600;
+            font-size: 1.8rem;
         }
         
         .input-group {
@@ -67,11 +91,12 @@
             font-size: 16px;
             outline: none;
             transition: all 0.3s;
+            background-color: rgba(255,255,255,0.8);
         }
         
         .input-group input:focus {
             border-color: #4CAF50;
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
         }
         
         .input-group i {
@@ -94,52 +119,186 @@
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 10px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
         }
         
         button:hover {
             background-color: #45a049;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
         }
         
         .logo {
             width: 120px;
             height: auto;
             margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .error-message {
+            color: #ff4444;
+            margin: 10px 0;
+            font-size: 14px;
+            min-height: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .footer-text {
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* Responsividade */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 20px;
+            }
+            
+            .login-container h2 {
+                font-size: 1.5rem;
+            }
+            
+            .logo {
+                width: 100px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <img src="icons/logomoto.png" alt="Logo GoMoto" class="logo">
+        <img src="./icons/logomoto-192x192.png" alt="Logo GoMoto" class="logo">
         <h2>Login do Motoboy</h2>
+        
         <div class="input-group">
             <i class="fas fa-user"></i>
-            <input type="text" id="nome" placeholder="Nome do Motoboy" required>
+            <input type="text" id="nome" placeholder="Nome do Motoboy" required autofocus>
         </div>
+        
         <div class="input-group">
             <i class="fas fa-lock"></i>
             <input type="password" id="senha" placeholder="Senha" required>
         </div>
-        <button onclick="fazerLogin()">Entrar</button>
+        
+        <div id="errorMessage" class="error-message"></div>
+        
+        <button id="loginButton" onclick="fazerLogin()">
+            <span id="buttonText">Entrar</span>
+            <span id="buttonLoader" style="display:none;">
+                <i class="fas fa-spinner fa-spin"></i>
+            </span>
+        </button>
+        
+        <p class="footer-text">GoMoto © 2023 - Todos os direitos reservados</p>
     </div>
 
     <script>
-        function fazerLogin() {
+        // Verificação de login existente
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem("motoboyNome") && localStorage.getItem("tracking") === "true") {
+                window.location.href = "index.html";
+            }
+            
+            // Foco automático no campo de nome
+            document.getElementById("nome").focus();
+        });
+
+        // Controle do botão de login
+        function toggleLoading(show) {
+            const buttonText = document.getElementById("buttonText");
+            const buttonLoader = document.getElementById("buttonLoader");
+            
+            if (show) {
+                buttonText.style.display = "none";
+                buttonLoader.style.display = "inline-block";
+                document.getElementById("loginButton").disabled = true;
+            } else {
+                buttonText.style.display = "inline-block";
+                buttonLoader.style.display = "none";
+                document.getElementById("loginButton").disabled = false;
+            }
+        }
+
+        // Exibir mensagens de erro
+        function showError(message) {
+            const errorElement = document.getElementById("errorMessage");
+            errorElement.textContent = message;
+            errorElement.style.opacity = 1;
+            
+            setTimeout(() => {
+                errorElement.style.opacity = 0;
+            }, 3000);
+        }
+
+        // Função principal de login
+        async function fazerLogin() {
             const nomeMotoboy = document.getElementById("nome").value.trim();
             const senhaMotoboy = document.getElementById("senha").value.trim();
 
-            if (nomeMotoboy && senhaMotoboy) {
+            // Validação básica
+            if (!nomeMotoboy || !senhaMotoboy) {
+                showError("Por favor, preencha todos os campos!");
+                return;
+            }
+
+            toggleLoading(true);
+
+            // Simulação de autenticação (substitua por chamada AJAX real)
+            try {
+                // Aqui você faria uma chamada para seu backend
+                // const response = await fetch('/api/login', { method: 'POST', ... });
+                
+                // Simulando um atraso de rede
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Simulando validação
+                if (senhaMotoboy.length < 4) {
+                    throw new Error("Senha deve ter pelo menos 4 caracteres");
+                }
+
+                // Salva os dados do usuário
                 localStorage.setItem("motoboyNome", nomeMotoboy);
                 localStorage.setItem("motoboySenha", senhaMotoboy);
+                localStorage.setItem("tracking", "true");
+                
+                // Redireciona para a página principal
                 window.location.href = "index.html";
-            } else {
-                alert("Por favor, preencha todos os campos!");
+                
+            } catch (error) {
+                showError(error.message || "Erro ao fazer login");
+                toggleLoading(false);
             }
         }
-        
-        if (localStorage.getItem("motoboyNome") && localStorage.getItem("tracking") === "true") {
-            window.location.href = "index.html";
+
+        // Login ao pressionar Enter
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fazerLogin();
+            }
+        });
+
+        // Gerenciamento do Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async function() {
+                try {
+                    // Limpa registros antigos
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                    
+                    // Registra novo service worker
+                    await navigator.serviceWorker.register('./service-worker.js');
+                    console.log('Service Worker registrado com sucesso');
+                } catch (error) {
+                    console.error('Erro no Service Worker:', error);
+                }
+            });
         }
     </script>
 </body>
