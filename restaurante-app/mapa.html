@@ -97,4 +97,101 @@
         // Configurações
         const restauranteId = "jap-sushi-01";
         const restauranteNome = "Jap Sushi";
-        const restaurantePosicao = [-48.5487, -27.5928]; // Subst
+        const restaurantePosicao = [-48.5487, -27.5928]; // Substitua pelas coordenadas reais
+
+        // Mapa
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
+            center: restaurantePosicao,
+            zoom: 15
+        });
+
+        // Marcador do restaurante
+        const elRestaurante = document.createElement('div');
+        elRestaurante.className = 'restaurant-marker';
+        new maplibregl.Marker(elRestaurante)
+            .setLngLat(restaurantePosicao)
+            .addTo(map);
+
+        // Conexão com o servidor
+        const socket = io('https://gomoto-server.onrender.com', {
+            query: {
+                restauranteId: restauranteId
+            }
+        });
+
+        const markers = {};
+        const motoboysData = {};
+
+        // Atualiza lista de motoboys
+        function updateMotoboysList() {
+            const list = document.getElementById("motoboys-ativos");
+            list.innerHTML = '';
+            
+            if (Object.keys(motoboysData).length === 0) {
+                list.innerHTML = '<p>Nenhum motoboy ativo</p>';
+                return;
+            }
+            
+            for (const [id, data] of Object.entries(motoboysData)) {
+                const item = document.createElement('div');
+                item.className = 'motoboy-item';
+                item.innerHTML = `
+                    <strong>${data.nome || id}</strong><br>
+                    ${data.position ? `📍 ${data.position.lat.toFixed(4)}, ${data.position.lng.toFixed(4)}` : 'Localização desconhecida'}
+                `;
+                item.onclick = () => {
+                    map.flyTo({
+                        center: [data.position.lng, data.position.lat],
+                        zoom: 16
+                    });
+                };
+                list.appendChild(item);
+            }
+        }
+
+        // Busca de motoboys
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('.motoboy-item');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        });
+
+        // Recebe atualizações do servidor
+        socket.on('location-update', (data) => {
+            if (!motoboysData[data.motoboyId]) {
+                motoboysData[data.motoboyId] = {
+                    nome: data.nome,
+                    position: data.position
+                };
+                
+                // Cria marcador
+                const el = document.createElement('div');
+                el.className = 'moto-marker';
+                markers[data.motoboyId] = new maplibregl.Marker(el)
+                    .setLngLat([data.position.lng, data.position.lat])
+                    .addTo(map);
+            } else {
+                // Atualiza marcador existente
+                motoboysData[data.motoboyId].position = data.position;
+                markers[data.motoboyId].setLngLat([data.position.lng, data.position.lat]);
+            }
+            
+            updateMotoboysList();
+        });
+
+        // Centraliza no restaurante ao carregar
+        map.on('load', () => {
+            map.flyTo({
+                center: restaurantePosicao,
+                zoom: 15
+            });
+        });
+    </script>
+</body>
+</html>
