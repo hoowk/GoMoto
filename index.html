@@ -1,30 +1,33 @@
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoMoto - Rastreamento</title>
+    
+    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- MapLibre -->
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="map"></div>
-    <div id="status">Iniciando rastreamento...</div>
-    <div class="toggle-container">
-        <label class="switch">
-            <input type="checkbox" id="toggleLocation" onchange="toggleTracking()">
-            <span class="slider"></span>
-        </label>
-        <span id="toggleText">Localização DESLIGADA</span>
-    </div>
+    <div id="status"><strong id="motoboyNome">Motoboy</strong><br>Iniciando rastreamento...</div>
+    <label class="switch">
+        <input type="checkbox" id="toggleLocation" onchange="toggleLocation()">
+        <span class="slider"></span>
+    </label>
 
     <script>
-        if (!localStorage.getItem('motoboy')) {
-            window.location.href = 'login.html';
-        }
+        // Recuperar nome do motoboy da tela de login
+        document.getElementById("motoboyNome").innerText = localStorage.getItem("motoboyNome") || "Motoboy";
 
+        // Mapa
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
@@ -32,39 +35,47 @@
             zoom: 14
         });
 
+        // Marcador (moto.png)
         const el = document.createElement('div');
         el.className = 'moto-marker';
-        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-            .setLngLat([-48.5487, -27.5928]).addTo(map);
+        const marker = new maplibregl.Marker({
+            element: el,
+            anchor: 'bottom'
+        }).setLngLat([-48.5487, -27.5928]).addTo(map);
 
-        let watchID;
-        function toggleTracking() {
-            const toggle = document.getElementById('toggleLocation');
-            const statusText = document.getElementById('toggleText');
-            if (toggle.checked) {
-                statusText.innerText = "Localização LIGADA";
-                watchID = navigator.geolocation.watchPosition(updatePosition, showError, { enableHighAccuracy: true });
+        let watchId = null;
+
+        function toggleLocation() {
+            const checkbox = document.getElementById("toggleLocation");
+
+            if (checkbox.checked) {
+                if (navigator.geolocation) {
+                    watchId = navigator.geolocation.watchPosition(
+                        (pos) => {
+                            const lngLat = [pos.coords.longitude, pos.coords.latitude];
+                            marker.setLngLat(lngLat);
+                            map.flyTo({ center: lngLat, zoom: 16 });
+                            document.getElementById('status').innerHTML = `
+                                <strong>${localStorage.getItem("motoboyNome") || "Motoboy"}</strong><br>
+                                ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
+                                Precisão: ${pos.coords.accuracy.toFixed(0)}m
+                            `;
+                        },
+                        (err) => {
+                            document.getElementById('status').innerHTML = `<strong style="color:red">ERRO:</strong> ${err.message}`;
+                        },
+                        { enableHighAccuracy: true }
+                    );
+                }
             } else {
-                statusText.innerText = "Localização DESLIGADA";
-                navigator.geolocation.clearWatch(watchID);
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                }
+                document.getElementById('status').innerHTML = `<strong>${localStorage.getItem("motoboyNome") || "Motoboy"}</strong><br>Localização desativada`;
             }
         }
 
-        function updatePosition(pos) {
-            const lngLat = [pos.coords.longitude, pos.coords.latitude];
-            marker.setLngLat(lngLat);
-            map.flyTo({ center: lngLat, zoom: 16 });
-            document.getElementById('status').innerHTML = `
-                <strong>MOTORISTA</strong><br>
-                ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
-                Precisão: ${pos.coords.accuracy.toFixed(0)}m
-            `;
-        }
-
-        function showError(err) {
-            document.getElementById('status').innerHTML = `<strong style="color:red">ERRO:</strong> ${err.message}`;
-        }
-
+        // PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js');
         }
