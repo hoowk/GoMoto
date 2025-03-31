@@ -3,50 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoMoto</title>
-    <link rel="stylesheet" href="style.css"> <!-- Link para o estilo -->
+    <title>Mapa</title>
+    <!-- Link para o CSS do Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 100vh;
+        }
+    </style>
 </head>
 <body>
-    <div id="map"></div> <!-- Aqui será exibido o mapa -->
-    <button id="toggleLocationBtn">Ativar Localização</button> <!-- Botão de ligar/desligar localização -->
 
+    <div id="map"></div>
+
+    <!-- Script para o Leaflet -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        let isTracking = false;  // Variável para controlar o status do rastreamento
+        var map = L.map('map').setView([51.505, -0.09], 13); // Coordeadas iniciais do mapa
 
-        // Função para iniciar o mapa
-        function initMap() {
-            const map = L.map('map').setView([0, 0], 13); // Configura o mapa na posição inicial
+        // Adiciona o tileLayer (padrão do Leaflet)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // Adiciona um marcador
+        var marker = L.marker([51.5, -0.09]).addTo(map)
+            .bindPopup("<b>Hello world!</b><br>I am a popup.")
+            .openPopup();
 
-            const marker = L.marker([0, 0]).addTo(map); // Inicializa o marcador
+        // Função para acompanhar a localização
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
 
-            // Função que ativa/desativa a localização
-            function toggleLocation() {
-                if (isTracking) {
-                    // Desativa o rastreamento
-                    navigator.geolocation.clearWatch(watchId);
-                    document.getElementById("toggleLocationBtn").innerText = "Ativar Localização";
-                } else {
-                    // Ativa o rastreamento
-                    watchId = navigator.geolocation.watchPosition(function(position) {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
+            L.marker(e.latlng).addTo(map)
+                .bindPopup("You are within " + radius + " meters from this point")
+                .openPopup();
 
-                        marker.setLatLng([lat, lon]);  // Atualiza a posição do marcador
-                        map.setView([lat, lon], 13);   // Atualiza a posição do mapa
-                    });
-                    document.getElementById("toggleLocationBtn").innerText = "Desativar Localização";
-                }
-                isTracking = !isTracking;
-            }
-
-            // Evento de clique no botão
-            document.getElementById("toggleLocationBtn").addEventListener("click", toggleLocation);
+            L.circle(e.latlng, radius).addTo(map);
         }
 
-        // Carregar o mapa
-        window.onload = initMap;
+        // Função para erro de localização
+        function onLocationError(e) {
+            alert(e.message);
+        }
+
+        // Ativa o rastreamento da localização
+        map.locate({setView: true, maxZoom: 16});
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
     </script>
 </body>
 </html>
