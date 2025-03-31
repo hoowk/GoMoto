@@ -56,6 +56,15 @@ io.on('connection', (socket) => {
   // Desconexão
   socket.on('disconnect', () => {
     console.log(`Cliente desconectado: ${socket.id}`);
+    
+    // Remove motoboy desconectado
+    for (const [id, motoboy] of Object.entries(motoboys)) {
+      if (motoboy.socketId === socket.id) {
+        delete motoboys[id];
+        console.log(`Motoboy ${id} removido`);
+        break;
+      }
+    }
   });
 });
 
