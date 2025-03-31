@@ -3,30 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - GoMoto</title>
+    <title>GoMoto - Login</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="login-container">
-        <h1>GoMoto</h1>
-        <input type="text" id="nome" placeholder="Digite seu nome">
-        <input type="password" id="senha" placeholder="Digite sua senha">
-        <button onclick="entrar()">Entrar</button>
+        <h2>Login</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Nome" required>
+            <input type="password" id="password" placeholder="Senha" required>
+            <button type="submit">Entrar</button>
+        </form>
     </div>
 
     <script>
-        function entrar() {
-            const nome = document.getElementById("nome").value;
-            const senha = document.getElementById("senha").value;
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
             
-            if (nome.trim() === "" || senha.trim() === "") {
-                alert("Por favor, preencha todos os campos!");
-                return;
+            // Simulação de autenticação (substituir por autenticação real se necessário)
+            if (password === "1234") { // Senha fixa para teste
+                localStorage.setItem('motoboyNome', username);
+                window.location.href = "index.html";
+            } else {
+                alert("Senha incorreta! Tente novamente.");
             }
-
-            localStorage.setItem("motoboyNome", nome);
-            window.location.href = "index.html"; // Redireciona para o mapa
-        }
+        });
     </script>
 </body>
 </html>
