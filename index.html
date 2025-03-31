@@ -8,51 +8,45 @@
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body, html { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         #status {
-            position: absolute; top: 10px; left: 10px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
             background: rgba(255,255,255,0.9);
-            padding: 10px; border-radius: 8px;
-            z-index: 1000; font-size: 14px;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
         }
         .toggle-container {
-            position: absolute; top: 10px; right: 10px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
             background: rgba(255,255,255,0.9);
-            padding: 10px; border-radius: 8px;
-            z-index: 1000; display: flex; align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
         }
-        .toggle-button {
-            width: 50px; height: 25px;
-            background: #ff4444; border-radius: 12px;
-            position: relative; cursor: pointer;
-            margin-left: 10px;
-        }
-        .toggle-button.active { background: #00C851; }
-        .toggle-circle {
-            width: 21px; height: 21px;
-            background: white; border-radius: 50%;
-            position: absolute; top: 2px; left: 2px;
-            transition: 0.3s;
-        }
-        .toggle-button.active .toggle-circle { left: 27px; }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    <div id="status">Carregando...</div>
+    <div id="status"></div>
     <div class="toggle-container">
-        <span>Localização</span>
-        <div id="toggle" class="toggle-button"><div class="toggle-circle"></div></div>
+        <div id="toggle">Ativar Rastreamento</div>
     </div>
 
     <script>
         // Verifica login
-        if (!localStorage.getItem("motoboyNome")) {
+        if(!localStorage.getItem("motoboyNome")) {
             window.location.href = "login.html";
         }
 
-        // Mapa
+        // Mostra nome do motoboy
+        document.getElementById("status").textContent = localStorage.getItem("motoboyNome");
+
+        // Inicializa mapa
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
@@ -60,41 +54,29 @@
             zoom: 14
         });
 
-        // Controle de localização
-        let tracking = localStorage.getItem("tracking") === "true";
-        document.getElementById('toggle').classList.toggle('active', tracking);
-
+        // Controle de rastreamento
+        let tracking = false;
         document.getElementById('toggle').addEventListener('click', function() {
             tracking = !tracking;
-            this.classList.toggle('active', tracking);
-            localStorage.setItem("tracking", tracking.toString());
+            this.textContent = tracking ? "Desativar Rastreamento" : "Ativar Rastreamento";
             
-            if (!tracking) {
+            if(!tracking) {
                 localStorage.removeItem("motoboyNome");
                 window.location.href = "login.html";
             }
         });
 
         // Atualiza localização
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(
-                (pos) => {
-                    if (tracking) {
-                        const lngLat = [pos.coords.longitude, pos.coords.latitude];
-                        new maplibregl.Marker().setLngLat(lngLat).addTo(map);
-                        map.flyTo({ center: lngLat, zoom: 16 });
-                        document.getElementById('status').innerHTML = `
-                            <strong>${localStorage.getItem("motoboyNome")}</strong><br>
-                            ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
-                            Precisão: ${pos.coords.accuracy.toFixed(0)}m
-                        `;
-                    }
-                },
-                (err) => {
-                    document.getElementById('status').textContent = `Erro: ${err.message}`;
-                },
-                { enableHighAccuracy: true }
-            );
+        if(navigator.geolocation) {
+            navigator.geolocation.watchPosition((position) => {
+                if(tracking) {
+                    const coords = [position.coords.longitude, position.coords.latitude];
+                    new maplibregl.Marker()
+                        .setLngLat(coords)
+                        .addTo(map);
+                    map.flyTo({ center: coords, zoom: 16 });
+                }
+            });
         }
     </script>
 </body>
