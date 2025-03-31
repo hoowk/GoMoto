@@ -1,38 +1,181 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <!-- ... (mantenha o head original sem alterações) ... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoMoto - Motoboy</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif; 
+            overflow: hidden; 
+        }
+        #map { 
+            position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            width: 100%; 
+        }
+        #status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            font-size: 14px;
+            max-width: 80%;
+        }
+        .toggle-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+        .toggle-button {
+            display: inline-block;
+            width: 50px;
+            height: 25px;
+            background: #ff4444;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .toggle-button.active {
+            background: #00C851;
+        }
+        .toggle-circle {
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: 0.3s;
+        }
+        .toggle-button.active .toggle-circle {
+            left: 27px;
+        }
+        .moto-marker {
+            width: 40px;
+            height: 40px;
+            background-image: url('./icons/moto.png');
+            background-size: contain;
+        }
+    </style>
 </head>
 <body>
-    <!-- ... (mantenha o HTML original) ... -->
+    <div id="map"></div>
+    <div id="status">Carregando...</div>
+    <div class="toggle-container">
+        <span>Localização</span>
+        <div id="toggle" class="toggle-button"><div class="toggle-circle"></div></div>
+    </div>
 
     <script>
-        // Conexão garantida com o restaurante
-        const socket = io('https://gomoto-server.onrender.com', {
-            query: {
-                motoboyId: localStorage.getItem("motoboyId") || generateId(),
-                restauranteId: "jap-sushi-01", // Fixo para Jap Sushi
-                nome: localStorage.getItem("motoboyNome") || "Motoboy"
+        // Verifica login
+        const nomeMotoboy = localStorage.getItem("motoboyNome");
+        if (!nomeMotoboy) {
+            window.location.href = "login.html";
+        }
+
+        // Gera ID único para o motoboy (ou pega existente)
+        const motoboyId = localStorage.getItem("motoboyId") || 'motoboy-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem("motoboyId", motoboyId);
+
+        // Conexão com o servidor
+        const socket = io('https://gomoto-server.onrender.com');
+        
+        // Vincula ao restaurante (substitua "ID_DO_RESTAURANTE" pelo ID real)
+        socket.emit('motoboy-login', {
+            motoboyId: motoboyId,
+            restauranteId: "ID_DO_RESTAURANTE", // Temporário - depois substitua por um QR Code
+            nome: nomeMotoboy
+        });
+
+        // Mapa
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
+            center: [-48.5487, -27.5928],
+            zoom: 14
+        });
+
+        // Marcador
+        const el = document.createElement('div');
+        el.className = 'moto-marker';
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([-48.5487, -27.5928])
+            .addTo(map);
+
+        // Controle de rastreamento
+        let tracking = localStorage.getItem("tracking") === "true";
+        document.getElementById('toggle').classList.toggle('active', tracking);
+        document.getElementById('status').textContent = tracking ? 
+            `${nomeMotoboy} - Aguardando localização...` : 
+            `${nomeMotoboy} - Localização desativada`;
+
+        document.getElementById('toggle').addEventListener('click', function() {
+            tracking = !tracking;
+            this.classList.toggle('active', tracking);
+            localStorage.setItem("tracking", tracking.toString());
+            
+            // ALTERAÇÃO CRÍTICA: Logout ao desligar localização
+            if (!tracking) {
+                localStorage.removeItem("motoboyNome");
+                localStorage.removeItem("motoboyId");
+                window.location.href = "login.html"; // Força retorno ao login
+            } else {
+                document.getElementById('status').textContent = `${nomeMotoboy} - Aguardando localização...`;
             }
         });
 
-        function generateId() {
-            const id = 'motoboy-' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem("motoboyId", id);
-            return id;
+        // Geolocalização
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    if (tracking) {
+                        const lngLat = [pos.coords.longitude, pos.coords.latitude];
+                        marker.setLngLat(lngLat);
+                        map.flyTo({ center: lngLat, zoom: 16 });
+                        
+                        // Envia localização para o servidor
+                        socket.emit('update-location', {
+                            motoboyId: motoboyId,
+                            position: {
+                                lat: pos.coords.latitude,
+                                lng: pos.coords.longitude,
+                                accuracy: pos.coords.accuracy
+                            }
+                        });
+
+                        document.getElementById('status').innerHTML = `
+                            <strong>${nomeMotoboy}</strong><br>
+                            ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
+                            Precisão: ${pos.coords.accuracy.toFixed(0)}m
+                        `;
+                    }
+                },
+                (err) => {
+                    document.getElementById('status').innerHTML = 
+                        `<strong style="color:red">ERRO:</strong> ${err.message}`;
+                },
+                { enableHighAccuracy: true }
+            );
         }
-
-        // DEBUG
-        socket.on('connect', () => {
-            console.log("✅ Conectado ao servidor");
-            socket.emit('motoboy-login', {
-                motoboyId: localStorage.getItem("motoboyId"),
-                restauranteId: "jap-sushi-01",
-                nome: localStorage.getItem("motoboyNome")
-            });
-        });
-
-        // ... (mantenha o resto do código original) ...
     </script>
 </body>
 </html>
