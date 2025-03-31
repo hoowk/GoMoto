@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - GoMoto</title>
     <link rel="manifest" href="./manifest.json">
-    <link rel="icon" href="./icons/logomoto-192x192.png">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <script src="./install.js" defer></script>
+    <link rel="icon" href="./icons/logomoto128.png">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
+            font-family: Arial, sans-serif;
         }
         body {
             display: flex;
@@ -22,104 +19,60 @@
             align-items: center;
             min-height: 100vh;
             background: url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
-            position: relative;
-        }
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
         }
         .login-container {
-            position: relative;
+            background: rgba(255,255,255,0.9);
+            padding: 30px;
+            border-radius: 10px;
             width: 90%;
             max-width: 400px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             text-align: center;
-            z-index: 1;
         }
         .logo {
             width: 150px;
             height: auto;
             margin-bottom: 20px;
         }
-        .input-group {
-            position: relative;
-            margin-bottom: 20px;
-        }
-        .input-group input {
+        input {
             width: 100%;
-            padding: 15px 15px 15px 45px;
+            padding: 12px;
+            margin: 10px 0;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        .input-group i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #777;
+            border-radius: 5px;
         }
         button {
             width: 100%;
-            padding: 15px;
-            background-color: #4CAF50;
+            padding: 12px;
+            background: #4CAF50;
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
+            border-radius: 5px;
             margin-top: 10px;
-        }
-        .error-message {
-            color: #ff4444;
-            margin: 10px 0;
-            font-size: 14px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <img src="./icons/logomoto-192x192.png" alt="GoMoto" class="logo">
+        <img src="./icons/logomoto128.png" alt="Logo GoMoto" class="logo">
         <h2>Login do Motoboy</h2>
-        <div class="input-group">
-            <i class="fas fa-user"></i>
-            <input type="text" id="nome" placeholder="Nome do Motoboy" required>
-        </div>
-        <div class="input-group">
-            <i class="fas fa-lock"></i>
-            <input type="password" id="senha" placeholder="Senha" required>
-        </div>
-        <div id="errorMessage" class="error-message"></div>
-        <button onclick="fazerLogin()">Entrar</button>
+        <input type="text" id="nome" placeholder="Nome do Motoboy">
+        <input type="password" id="senha" placeholder="Senha">
+        <button onclick="login()">Entrar</button>
     </div>
 
     <script>
-        function fazerLogin() {
-            const nome = document.getElementById("nome").value.trim();
-            const senha = document.getElementById("senha").value.trim();
-
-            if (!nome || !senha) {
-                document.getElementById("errorMessage").textContent = "Preencha todos os campos!";
-                return;
+        function login() {
+            const nome = document.getElementById("nome").value;
+            const senha = document.getElementById("senha").value;
+            
+            if(nome && senha) {
+                localStorage.setItem("motoboyNome", nome);
+                window.location.href = "index.html";
+            } else {
+                alert("Preencha todos os campos!");
             }
-
-            localStorage.setItem("motoboyNome", nome);
-            localStorage.setItem("tracking", "true");
-            window.location.href = "index.html";
         }
-
-        // Enter para login
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') fazerLogin();
-        });
     </script>
 </body>
 </html>
