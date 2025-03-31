@@ -1,106 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa - Jap Sushi</title>
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
-    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            height: 100%;
-            overflow: hidden;
-        }
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-        }
-        #header {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255,255,255,0.95);
-            padding: 15px;
-            border-radius: 8px;
-            z-index: 1000;
-            width: 300px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        #search {
-            position: absolute;
-            top: 10px;
-            left: 330px;
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            width: 250px;
-        }
-        .moto-marker {
-            width: 30px;
-            height: 30px;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/2972/2972185.png');
-            background-size: contain;
-        }
-        .motoboy-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 10px;
-        }
-        .motoboy-item {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-        }
-        .motoboy-item:hover {
-            background: #f5f5f5;
-        }
-        .restaurant-marker {
-            width: 40px;
-            height: 40px;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/167/167707.png');
-            background-size: contain;
-        }
-        #search-container {
-            display: flex;
-        }
-        #search-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px 0 0 4px;
-        }
-        #search-button {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 0 4px 4px 0;
-            cursor: pointer;
-        }
-    </style>
+    <!-- ... (mantenha o mesmo head do código anterior) ... -->
 </head>
 <body>
     <div id="header">
         <h2>🍣 Jap Sushi</h2>
-        <div class="motoboy-list" id="motoboys-ativos">
-            <p>Nenhum motoboy ativo</p>
-        </div>
-    </div>
-    
-    <div id="search">
         <div id="search-container">
-            <input type="text" id="search-input" placeholder="Buscar motoboy...">
-            <button id="search-button">🔍</button>
+            <input type="text" id="search-input" placeholder="Digite o nome do motoboy">
+            <button id="search-btn">🔍</button>
         </div>
+        <div id="motoboys-list"></div>
     </div>
-    
     <div id="map"></div>
 
     <script>
@@ -109,59 +20,43 @@
             window.location.href = "login.html";
         }
 
-        // Configurações
-        const restauranteId = "jap-sushi-01";
-        let map;
+        // Mapa de ruas HD
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/streets/style.json?key=kEB2a1outAjGbGUoNn6x',
+            center: [0, 0], // Será sobrescrito
+            zoom: 15,
+            antialias: true
+        });
 
-        // Inicializa mapa com localização do usuário
-        function initMap(position) {
-            const userLocation = [position.coords.longitude, position.coords.latitude];
-            
-            map = new maplibregl.Map({
-                container: 'map',
-                style: 'https://api.maptiler.com/maps/streets/style.json?key=kEB2a1outAjGbGUoNn6x', // Estilo de rua HD
-                center: userLocation,
-                zoom: 15,
-                antialias: true // Melhor qualidade
-            });
-
-            // Marcador do restaurante
+        // Obtém localização REAL
+        navigator.geolocation.getCurrentPosition(pos => {
+            const center = [pos.coords.longitude, pos.coords.latitude];
+            map.setCenter(center);
             new maplibregl.Marker({ color: '#e74c3c' })
-                .setLngLat(userLocation)
+                .setLngLat(center)
                 .addTo(map);
+        }, err => {
+            alert("Ative a localização!");
+            map.setCenter([-46.6366, -23.5475]); // Fallback
+        });
 
-            // Conexão com servidor
-            connectToServer();
-        }
+        // Conexão com servidor
+        const socket = io('https://gomoto-server.onrender.com', {
+            query: { restauranteId: "jap-sushi-01" }
+        });
 
-        // Erro de localização
-        function handleLocationError() {
-            alert("Ative a localização para usar o sistema!");
-            // Fallback para mapa genérico
-            map = new maplibregl.Map({
-                container: 'map',
-                style: 'https://api.maptiler.com/maps/streets/style.json?key=kEB2a1outAjGbGUoNn6x',
-                center: [-46.6366, -23.5475],
-                zoom: 12
-            });
-            connectToServer();
-        }
+        // Atualiza motoboys
+        socket.on('location-update', data => {
+            console.log("Motoboy atualizado:", data);
+            // ... (código de marcadores igual ao anterior)
+        });
 
-        // Conexão WebSocket
-        function connectToServer() {
-            const socket = io('https://gomoto-server.onrender.com', {
-                query: { restauranteId }
-            });
-
-            // ... (código de atualização de motoboys mantido igual) ...
-        }
-
-        // Inicia
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(initMap, handleLocationError);
-        } else {
-            handleLocationError();
-        }
+        // Busca
+        document.getElementById('search-btn').addEventListener('click', () => {
+            const term = document.getElementById('search-input').value.toLowerCase();
+            // Filtra motoboys
+        });
     </script>
 </body>
 </html>
