@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GoMoto Restaurante</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container {
+            background: rgba(255, 255, 255, 0.93);
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .logo {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="logo-restaurante.png" alt="Logo" class="logo">
+        <h2>Login do Restaurante</h2>
+        <input type="text" id="restauranteId" placeholder="ID do Restaurante" required>
+        <input type="password" id="senha" placeholder="Senha" required>
+        <button onclick="fazerLogin()">Entrar</button>
+    </div>
+
+    <script>
+        function fazerLogin() {
+            const restauranteId = document.getElementById("restauranteId").value;
+            const senha = document.getElementById("senha").value;
+            
+            if (!restauranteId || !senha) {
+                alert("Preencha todos os campos!");
+                return;
+            }
+
+            // Simulação de login (substituir por chamada real ao backend)
+            if (senha === "123456") { // Senha padrão temporária
+                localStorage.setItem("restauranteAutenticado", "true");
+                localStorage.setItem("restauranteId", restauranteId);
+                window.location.href = "mapa.html";
+            } else {
+                alert("Credenciais inválidas!");
+            }
+        }
+    </script>
+</body>
+</html>
