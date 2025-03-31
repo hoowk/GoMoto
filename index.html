@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoMoto - Rastreamento</title>
+    <title>GoMoto - Motoboy</title>
     <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
@@ -25,23 +25,25 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.95);
             padding: 10px 15px;
             border-radius: 8px;
             z-index: 1000;
             font-size: 14px;
             max-width: 80%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .toggle-container {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.95);
             padding: 10px;
             border-radius: 8px;
             z-index: 1000;
             display: flex;
             align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .toggle-button {
             display: inline-block;
@@ -52,6 +54,7 @@
             position: relative;
             cursor: pointer;
             transition: background 0.3s;
+            margin-left: 10px;
         }
         .toggle-button.active {
             background: #00C851;
@@ -72,7 +75,7 @@
         .moto-marker {
             width: 40px;
             height: 40px;
-            background-image: url('./icons/moto.png');
+            background-image: url('https://cdn-icons-png.flaticon.com/512/2972/2972185.png');
             background-size: contain;
         }
     </style>
@@ -81,7 +84,7 @@
     <div id="map"></div>
     <div id="status">Carregando...</div>
     <div class="toggle-container">
-        <span>Localização</span>
+        <span>Localização:</span>
         <div id="toggle" class="toggle-button"><div class="toggle-circle"></div></div>
     </div>
 
@@ -99,10 +102,10 @@
         // Conexão com o servidor
         const socket = io('https://gomoto-server.onrender.com');
         
-        // Vincula ao restaurante (substitua "ID_DO_RESTAURANTE" pelo ID real)
+        // Vincula ao Jap Sushi
         socket.emit('motoboy-login', {
             motoboyId: motoboyId,
-            restauranteId: "ID_DO_RESTAURANTE", // Temporário - depois substitua por um QR Code
+            restauranteId: "jap-sushi-01",
             nome: nomeMotoboy
         });
 
@@ -132,11 +135,9 @@
             tracking = !tracking;
             this.classList.toggle('active', tracking);
             localStorage.setItem("tracking", tracking.toString());
-            
-            if (!tracking) {
-                localStorage.removeItem("motoboyNome");
-                window.location.href = "login.html";
-            }
+            document.getElementById('status').textContent = tracking ? 
+                `${nomeMotoboy} - Aguardando localização...` : 
+                `${nomeMotoboy} - Localização desativada`;
         });
 
         // Geolocalização
