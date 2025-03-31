@@ -4,77 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - GoMoto</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: red; /* Pode substituir por uma imagem de fundo aqui, se necessário */
-            background-image: url('sua-imagem-de-fundo.jpg'); /* Substitua pelo caminho da sua imagem */
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
             background-size: cover;
-            background-position: center;
+            position: relative;
         }
-
-        .login-container {
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 400px;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            text-align: center;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
         }
-
+        
+        .login-container {
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 1;
+            backdrop-filter: blur(5px);
+        }
+        
         .login-container h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+        
+        .input-group {
+            position: relative;
             margin-bottom: 20px;
         }
-
-        input {
+        
+        .input-group input {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            padding: 15px 15px 15px 45px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
             font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
         }
-
+        
+        .input-group input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+        
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
         button {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             background-color: #4CAF50;
             border: none;
             color: white;
             font-size: 16px;
-            border-radius: 5px;
+            font-weight: 500;
+            border-radius: 8px;
             cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
         }
-
+        
         button:hover {
             background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            width: 80px;
+            margin-bottom: 20px;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
     <div class="login-container">
-        <h2>Login - GoMoto</h2>
-        <input type="text" id="nome" placeholder="Nome do Motoboy" required>
-        <input type="password" id="senha" placeholder="Senha" required>
+        <img src="https://via.placeholder.com/80x80?text=GoMoto" alt="Logo" class="logo">
+        <h2>Login do Motoboy</h2>
+        <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" id="nome" placeholder="Nome do Motoboy" required>
+        </div>
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="senha" placeholder="Senha" required>
+        </div>
         <button onclick="fazerLogin()">Entrar</button>
     </div>
 
     <script>
         function fazerLogin() {
-            const nomeMotoboy = document.getElementById("nome").value;
-            const senhaMotoboy = document.getElementById("senha").value;
+            const nomeMotoboy = document.getElementById("nome").value.trim();
+            const senhaMotoboy = document.getElementById("senha").value.trim();
 
             if (nomeMotoboy && senhaMotoboy) {
                 localStorage.setItem("motoboyNome", nomeMotoboy);
-                window.location.href = "index.html"; // Redireciona para a página principal
+                localStorage.setItem("motoboySenha", senhaMotoboy);
+                window.location.href = "index.html";
             } else {
                 alert("Por favor, preencha todos os campos!");
             }
+        }
+        
+        // Verificar se já está logado
+        if (localStorage.getItem("motoboyNome") && localStorage.getItem("tracking") === "true") {
+            window.location.href = "index.html";
         }
     </script>
 </body>
