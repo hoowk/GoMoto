@@ -68,6 +68,7 @@
     </div>
 
     <script>
+        // Recupera o nome do motoboy
         let nomeMotoboy = localStorage.getItem("motoboyNome") || "MOTORISTA";
         document.getElementById("status").innerHTML = `<strong>${nomeMotoboy}</strong><br>Iniciando rastreamento...`;
         
@@ -86,13 +87,14 @@
         
         let tracking = true;
         
+        // Ao clicar na chave de ligar/desligar
         document.getElementById('toggle').addEventListener('click', function () {
             tracking = !tracking;
             this.classList.toggle('active', tracking);
             
             if (!tracking) {
                 localStorage.removeItem("motoboyNome");
-                window.location.href = "login.html";
+                window.location.href = "login.html"; // Volta para a tela de login
             }
         });
         
