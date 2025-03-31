@@ -1,4 +1,3 @@
-// server/server.js
 const express = require('express');
 const socketio = require('socket.io');
 const http = require('http');
@@ -7,35 +6,51 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
   cors: {
-    origin: "*" // Permite todas as origens (apenas para desenvolvimento)
+    origin: "*"
   }
 });
 
-// Armazena os motoboys conectados
+// Armazena os dados
 const motoboys = {};
+const restaurantes = {};
 
 io.on('connection', (socket) => {
-  console.log('Novo dispositivo conectado: ' + socket.id);
-
-  // Recebe localização do app do motoboy
-  socket.on('update-location', (data) => {
-    motoboys[data.id] = {
-      nome: data.nome,
-      position: data.position,
-      lastUpdate: new Date()
+  // Login do Motoboy
+  socket.on('motoboy-login', (data) => {
+    const { motoboyId, restauranteId } = data;
+    motoboys[motoboyId] = {
+      ...data,
+      socketId: socket.id,
+      restauranteId
     };
-    // Envia para todos os restaurantes
-    io.emit('motoboys-update', motoboys);
+    console.log(`Motoboy ${motoboyId} conectado ao restaurante ${restauranteId}`);
   });
 
-  // Quando um restaurante se conecta
-  socket.on('restaurante-connected', () => {
-    // Envia a lista atual de motoboys
-    socket.emit('motoboys-update', motoboys);
+  // Login do Restaurante
+  socket.on('restaurante-login', (restauranteId) => {
+    socket.join(restauranteId);
+    restaurantes[restauranteId] = socket.id;
+    console.log(`Restaurante ${restauranteId} conectado`);
+  });
+
+  // Atualização de localização
+  socket.on('update-location', (data) => {
+    const motoboy = motoboys[data.motoboyId];
+    if (motoboy) {
+      io.to(motoboy.restauranteId).emit('location-update', {
+        motoboyId: data.motoboyId,
+        position: data.position
+      });
+    }
+  });
+
+  // Desconexão
+  socket.on('disconnect', () => {
+    console.log(`Cliente desconectado: ${socket.id}`);
   });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
