@@ -1,23 +1,27 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - GoMoto</title>
-    <link rel="stylesheet" href="style.css"> <!-- Link para o estilo -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="login-container">
-        <h1>Login do Motoboy</h1>
-        <button id="googleLoginBtn">Entrar com Google</button>
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Nome de usuário">
+        <button onclick="login()">Entrar</button>
     </div>
-
     <script>
-        document.getElementById("googleLoginBtn").addEventListener("click", function() {
-            // Aqui você pode integrar com o Google Auth ou qualquer outra autenticação
-            // Por enquanto, vamos redirecionar diretamente para o mapa após o login
-            window.location.href = "index.html";  // Direciona para o mapa
-        });
+        function login() {
+            const user = document.getElementById('username').value;
+            if (user) {
+                localStorage.setItem('motoboy', user);
+                window.location.href = 'index.html';
+            } else {
+                alert('Digite seu nome!');
+            }
+        }
     </script>
 </body>
 </html>
