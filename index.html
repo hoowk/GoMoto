@@ -1,59 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>GoMoto - Motoboy</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="firebase.js"></script>
-
-    <style>
-        body { font-family: Arial; text-align: center; padding: 20px; }
-        button { padding: 10px 20px; font-size: 16px; margin: 10px; }
-        #status { font-weight: bold; margin: 20px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoMoto</title>
+    <link rel="stylesheet" href="style.css"> <!-- Link para o estilo -->
 </head>
 <body>
-    <h1>GoMoto</h1>
-    <div id="status">Desconectado</div>
-    
-    <button onclick="login()">Entrar com Google</button>
-    <button onclick="toggleTracking()" id="trackBtn" disabled>Iniciar Rastreamento</button>
-    
+    <div id="map"></div> <!-- Aqui será exibido o mapa -->
+    <button id="toggleLocationBtn">Ativar Localização</button> <!-- Botão de ligar/desligar localização -->
+
     <script>
-        let isTracking = false;
-        
-        function toggleTracking() {
-            isTracking = !isTracking;
-            const btn = document.getElementById('trackBtn');
-            
-            if (isTracking) {
-                btn.textContent = "Parar Rastreamento";
-                navigator.geolocation.watchPosition(updateLocation);
-            } else {
-                btn.textContent = "Iniciar Rastreamento";
+        let isTracking = false;  // Variável para controlar o status do rastreamento
+
+        // Função para iniciar o mapa
+        function initMap() {
+            const map = L.map('map').setView([0, 0], 13); // Configura o mapa na posição inicial
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            const marker = L.marker([0, 0]).addTo(map); // Inicializa o marcador
+
+            // Função que ativa/desativa a localização
+            function toggleLocation() {
+                if (isTracking) {
+                    // Desativa o rastreamento
+                    navigator.geolocation.clearWatch(watchId);
+                    document.getElementById("toggleLocationBtn").innerText = "Ativar Localização";
+                } else {
+                    // Ativa o rastreamento
+                    watchId = navigator.geolocation.watchPosition(function(position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+
+                        marker.setLatLng([lat, lon]);  // Atualiza a posição do marcador
+                        map.setView([lat, lon], 13);   // Atualiza a posição do mapa
+                    });
+                    document.getElementById("toggleLocationBtn").innerText = "Desativar Localização";
+                }
+                isTracking = !isTracking;
             }
+
+            // Evento de clique no botão
+            document.getElementById("toggleLocationBtn").addEventListener("click", toggleLocation);
         }
-        
-        function updateLocation(pos) {
-            const user = firebase.auth().currentUser;
-            if (user) {
-                firebase.database().ref('motoboys/' + user.uid).set({
-                    nome: user.displayName,
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    timestamp: Date.now()
-                });
-            }
-        }
-        
-        function login() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            firebase.auth().signInWithPopup(provider).then(user => {
-                document.getElementById('status').textContent = `Olá, ${user.user.displayName}!`;
-                document.getElementById('trackBtn').disabled = false;
-            });
-        }
+
+        // Carregar o mapa
+        window.onload = initMap;
     </script>
 </body>
 </html>
