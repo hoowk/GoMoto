@@ -1,54 +1,20 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoMoto</title>
-    <link rel="stylesheet" href="style.css"> <!-- Link para o estilo -->
+    <title>Mapa do Motoboy</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="map"></div> <!-- Aqui será exibido o mapa -->
 
-    <!-- Botão para ativar/desativar localização -->
-    <button id="toggleLocationBtn">Ativar Localização</button>
+    <div id="map"></div>
+    
+    <div class="buttons">
+        <button id="toggleLocation">Ativar Localização</button>
+        <button id="backToDriver">Voltar para Motoboy</button>
+    </div>
 
-    <script>
-        let isTracking = false;  // Variável para controlar o status do rastreamento
-
-        // Função para iniciar o mapa
-        function initMap() {
-            const map = L.map('map').setView([0, 0], 13); // Configura o mapa na posição inicial
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-            const marker = L.marker([0, 0]).addTo(map); // Inicializa o marcador
-
-            // Função que ativa/desativa a localização
-            function toggleLocation() {
-                if (isTracking) {
-                    // Desativa o rastreamento
-                    navigator.geolocation.clearWatch(watchId);
-                    document.getElementById("toggleLocationBtn").innerText = "Ativar Localização";
-                } else {
-                    // Ativa o rastreamento
-                    watchId = navigator.geolocation.watchPosition(function(position) {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-
-                        marker.setLatLng([lat, lon]);  // Atualiza a posição do marcador
-                        map.setView([lat, lon], 13);   // Atualiza a posição do mapa
-                    });
-                    document.getElementById("toggleLocationBtn").innerText = "Desativar Localização";
-                }
-                isTracking = !isTracking;
-            }
-
-            // Evento de clique no botão
-            document.getElementById("toggleLocationBtn").addEventListener("click", toggleLocation);
-        }
-
-        // Carregar o mapa
-        window.onload = initMap;
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
