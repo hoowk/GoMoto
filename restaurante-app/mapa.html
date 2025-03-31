@@ -8,110 +8,11 @@
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            height: 100%;
-            overflow: hidden;
-        }
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-        }
-        #header {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255,255,255,0.95);
-            padding: 15px;
-            border-radius: 8px;
-            z-index: 1000;
-            width: 300px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        #search {
-            position: absolute;
-            top: 10px;
-            left: 330px;
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            width: 250px;
-        }
-        .moto-marker {
-            width: 30px;
-            height: 30px;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/2972/2972185.png');
-            background-size: contain;
-        }
-        .motoboy-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 10px;
-        }
-        .motoboy-item {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-        }
-        .motoboy-item:hover {
-            background: #f5f5f5;
-        }
-        .restaurant-marker {
-            width: 40px;
-            height: 40px;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/167/167707.png');
-            background-size: contain;
-        }
-        #restaurant-name {
-            color: #e74c3c;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        #search-container {
-            display: flex;
-            align-items: center;
-        }
-        #search-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px 0 0 4px;
-            box-sizing: border-box;
-        }
-        #search-button {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 0 4px 4px 0;
-            cursor: pointer;
-        }
-        #search-button:hover {
-            background: #c0392b;
-        }
+        /* ... (mantenha TODOS os estilos anteriores) ... */
     </style>
 </head>
 <body>
-    <div id="header">
-        <div id="restaurant-name">🍣 Jap Sushi</div>
-        <div class="motoboy-list" id="motoboys-ativos">
-            <p>Nenhum motoboy ativo</p>
-        </div>
-    </div>
-    
-    <div id="search">
-        <div id="search-container">
-            <input type="text" id="search-input" placeholder="Buscar motoboy...">
-            <button id="search-button">🔍</button>
-        </div>
-    </div>
-    
-    <div id="map"></div>
+    <!-- ... (mantenha o HTML anterior) ... -->
 
     <script>
         // Verifica login
@@ -119,109 +20,41 @@
             window.location.href = "login.html";
         }
 
-        // Configurações (ATUALIZE COM SUAS COORDENADAS REAIS!)
+        // Configurações
         const restauranteId = "jap-sushi-01";
-        const restauranteNome = "Jap Sushi";
-        const restaurantePosicao = [-46.6395, -23.5497]; // Exemplo: São Paulo
+        let restaurantePosicao = [-46.6395, -23.5497]; // Valor padrão (será sobrescrito)
 
-        // Mapa (QUALIDADE ALTA)
+        // Mapa (QUALIDADE ALTA - estilo anterior melhorado)
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/hybrid/style.json?key=kEB2a1outAjGbGUoNn6x',
+            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
             center: restaurantePosicao,
-            zoom: 15
+            zoom: 15,
+            antialias: true // Melhora a qualidade
         });
 
-        // Marcador do restaurante
-        const elRestaurante = document.createElement('div');
-        elRestaurante.className = 'restaurant-marker';
-        new maplibregl.Marker(elRestaurante)
-            .setLngLat(restaurantePosicao)
-            .addTo(map);
-
-        // Conexão com o servidor
-        const socket = io('https://gomoto-server.onrender.com', {
-            query: {
-                restauranteId: restauranteId
-            }
-        });
-
-        const markers = {};
-        const motoboysData = {};
-
-        // Atualiza lista de motoboys
-        function updateMotoboysList() {
-            const list = document.getElementById("motoboys-ativos");
-            list.innerHTML = '';
-            
-            if (Object.keys(motoboysData).length === 0) {
-                list.innerHTML = '<p>Nenhum motoboy ativo</p>';
-                return;
-            }
-            
-            for (const [id, data] of Object.entries(motoboysData)) {
-                const item = document.createElement('div');
-                item.className = 'motoboy-item';
-                item.innerHTML = `
-                    <strong>${data.nome || id}</strong><br>
-                    ${data.position ? `📍 ${data.position.lat.toFixed(4)}, ${data.position.lng.toFixed(4)}` : 'Localização desconhecida'}
-                `;
-                item.onclick = () => {
+        // Obtém localização REAL do PC
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    restaurantePosicao = [pos.coords.longitude, pos.coords.latitude];
                     map.flyTo({
-                        center: [data.position.lng, data.position.lat],
-                        zoom: 16
+                        center: restaurantePosicao,
+                        zoom: 15
                     });
-                };
-                list.appendChild(item);
-            }
+                    // Atualiza marcador do restaurante
+                    new maplibregl.Marker()
+                        .setLngLat(restaurantePosicao)
+                        .addTo(map);
+                },
+                (err) => {
+                    console.error("Erro ao obter localização:", err);
+                    alert("Ative a localização para melhor experiência!");
+                }
+            );
         }
 
-        // Busca de motoboys
-        document.getElementById('search-button').addEventListener('click', buscarMotoboy);
-        document.getElementById('search-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') buscarMotoboy();
-        });
-
-        function buscarMotoboy() {
-            const term = document.getElementById('search-input').value.toLowerCase();
-            const items = document.querySelectorAll('.motoboy-item');
-            
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(term) ? 'block' : 'none';
-            });
-        }
-
-        // Recebe atualizações do servidor
-        socket.on('location-update', (data) => {
-            if (!motoboysData[data.motoboyId]) {
-                motoboysData[data.motoboyId] = {
-                    nome: data.nome,
-                    position: data.position
-                };
-                
-                // Cria marcador
-                const el = document.createElement('div');
-                el.className = 'moto-marker';
-                markers[data.motoboyId] = new maplibregl.Marker(el)
-                    .setLngLat([data.position.lng, data.position.lat])
-                    .addTo(map);
-            } else {
-                // Atualiza marcador existente
-                motoboysData[data.motoboyId].position = data.position;
-                markers[data.motoboyId].setLngLat([data.position.lng, data.position.lat]);
-            }
-            
-            updateMotoboysList();
-        });
-
-        // Centraliza no restaurante ao carregar
-        map.on('load', () => {
-            map.flyTo({
-                center: restaurantePosicao,
-                zoom: 15
-            });
-        });
+        // ... (mantenha o RESTANTE do código anterior, incluindo a conexão Socket.io) ...
     </script>
 </body>
 </html>
