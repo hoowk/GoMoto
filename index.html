@@ -3,72 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - GoMoto</title>
+    <title>GoMoto - Rastreamento</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- MapLibre -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f0f8ff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        body, html { margin: 0; padding: 0; overflow: hidden; font-family: Arial; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #status {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 12px; border-radius: 4px;
+            z-index: 1000; font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        .login-container {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            width: 300px;
-            text-align: center;
+        .moto-marker {
+            width: 40px; height: 40px;
+            background-image: url('icons/moto.png');
+            background-size: contain;
+            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
         }
-        h1 {
-            font-size: 24px;
-            color: #333;
+        .toggle-container {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 8px; border-radius: 4px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 18px;
+        .toggle-button {
+            display: inline-block;
+            width: 50px; height: 25px;
+            background: red;
+            border-radius: 12px;
+            position: relative;
             cursor: pointer;
         }
-        button:hover {
-            background-color: #45a049;
+        .toggle-button.active {
+            background: green;
+        }
+        .toggle-circle {
+            width: 23px; height: 23px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 1px; left: 2px;
+            transition: 0.3s;
+        }
+        .toggle-button.active .toggle-circle {
+            left: 25px;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h1>Login</h1>
-        <input type="text" id="motoboyNome" placeholder="Nome do Motoboy" required>
-        <input type="password" id="motoboySenha" placeholder="Senha" required>
-        <button id="loginBtn">Entrar</button>
+    <div id="map"></div>
+    <div id="status">Iniciando rastreamento...</div>
+    <div class="toggle-container">
+        <div id="toggle" class="toggle-button"><div class="toggle-circle"></div></div>
     </div>
 
     <script>
-        document.getElementById("loginBtn").addEventListener("click", function() {
-            const nome = document.getElementById("motoboyNome").value;
-            const senha = document.getElementById("motoboySenha").value;
-
-            if (nome && senha) {
-                localStorage.setItem("motoboyNome", nome);
-                window.location.href = "index.html";
-            } else {
-                alert("Por favor, insira seu nome e senha.");
+        let nomeMotoboy = localStorage.getItem("motoboyNome") || "MOTORISTA";
+        document.getElementById("status").innerHTML = `<strong>${nomeMotoboy}</strong><br>Iniciando rastreamento...`;
+        
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
+            center: [-48.5487, -27.5928],
+            zoom: 14
+        });
+        
+        const el = document.createElement('div');
+        el.className = 'moto-marker';
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([-48.5487, -27.5928])
+            .addTo(map);
+        
+        let tracking = false;
+        
+        document.getElementById('toggle').addEventListener('click', function () {
+            tracking = !tracking;
+            this.classList.toggle('active', tracking);
+            
+            if (!tracking) {
+                localStorage.removeItem("motoboyNome");
+                window.location.href = "login.html"; // Redireciona para login
             }
         });
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    if (tracking) {
+                        const lngLat = [pos.coords.longitude, pos.coords.latitude];
+                        marker.setLngLat(lngLat);
+                        map.flyTo({ center: lngLat, zoom: 16 });
+                        document.getElementById('status').innerHTML = `<strong>${nomeMotoboy}</strong><br>
+                            ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
+                            Precisão: ${pos.coords.accuracy.toFixed(0)}m`;
+                    }
+                },
+                (err) => {
+                    document.getElementById('status').innerHTML = 
+                        `<strong style="color:red">ERRO:</strong> ${err.message}`;
+                },
+                { enableHighAccuracy: true }
+            );
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
     </script>
 </body>
 </html>
