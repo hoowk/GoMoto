@@ -7,18 +7,19 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif; 
+            overflow: hidden; 
         }
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
+        #map { 
+            position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            width: 100%; 
         }
         #status {
             position: absolute;
@@ -30,7 +31,6 @@
             z-index: 1000;
             font-size: 14px;
             max-width: 80%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .toggle-container {
             position: absolute;
@@ -42,11 +42,6 @@
             z-index: 1000;
             display: flex;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .toggle-label {
-            margin-right: 10px;
-            font-size: 14px;
         }
         .toggle-button {
             display: inline-block;
@@ -79,7 +74,6 @@
             height: 40px;
             background-image: url('./icons/moto.png');
             background-size: contain;
-            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
         }
     </style>
 </head>
@@ -87,10 +81,8 @@
     <div id="map"></div>
     <div id="status">Carregando...</div>
     <div class="toggle-container">
-        <span class="toggle-label">Localização</span>
-        <div id="toggle" class="toggle-button">
-            <div class="toggle-circle"></div>
-        </div>
+        <span>Localização</span>
+        <div id="toggle" class="toggle-button"><div class="toggle-circle"></div></div>
     </div>
 
     <script>
@@ -100,7 +92,21 @@
             window.location.href = "login.html";
         }
 
-        // Inicializa mapa
+        // Gera ID único para o motoboy (ou pega existente)
+        const motoboyId = localStorage.getItem("motoboyId") || 'motoboy-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem("motoboyId", motoboyId);
+
+        // Conexão com o servidor
+        const socket = io('https://gomoto-server.onrender.com');
+        
+        // Vincula ao restaurante (substitua "ID_DO_RESTAURANTE" pelo ID real)
+        socket.emit('motoboy-login', {
+            motoboyId: motoboyId,
+            restauranteId: "ID_DO_RESTAURANTE", // Temporário - depois substitua por um QR Code
+            nome: nomeMotoboy
+        });
+
+        // Mapa
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
@@ -108,7 +114,7 @@
             zoom: 14
         });
 
-        // Cria marcador personalizado
+        // Marcador
         const el = document.createElement('div');
         el.className = 'moto-marker';
         const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
@@ -118,10 +124,9 @@
         // Controle de rastreamento
         let tracking = localStorage.getItem("tracking") === "true";
         document.getElementById('toggle').classList.toggle('active', tracking);
-        
-        document.getElementById('status').innerHTML = tracking ? 
-            `<strong>${nomeMotoboy}</strong><br>Aguardando localização...` :
-            `<strong>${nomeMotoboy}</strong><br>Localização desativada`;
+        document.getElementById('status').textContent = tracking ? 
+            `${nomeMotoboy} - Aguardando localização...` : 
+            `${nomeMotoboy} - Localização desativada`;
 
         document.getElementById('toggle').addEventListener('click', function() {
             tracking = !tracking;
@@ -131,12 +136,10 @@
             if (!tracking) {
                 localStorage.removeItem("motoboyNome");
                 window.location.href = "login.html";
-            } else {
-                document.getElementById('status').innerHTML = `<strong>${nomeMotoboy}</strong><br>Aguardando localização...`;
             }
         });
 
-        // Atualiza localização
+        // Geolocalização
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(
                 (pos) => {
@@ -145,6 +148,16 @@
                         marker.setLngLat(lngLat);
                         map.flyTo({ center: lngLat, zoom: 16 });
                         
+                        // Envia localização para o servidor
+                        socket.emit('update-location', {
+                            motoboyId: motoboyId,
+                            position: {
+                                lat: pos.coords.latitude,
+                                lng: pos.coords.longitude,
+                                accuracy: pos.coords.accuracy
+                            }
+                        });
+
                         document.getElementById('status').innerHTML = `
                             <strong>${nomeMotoboy}</strong><br>
                             ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
@@ -158,9 +171,6 @@
                 },
                 { enableHighAccuracy: true }
             );
-        } else {
-            document.getElementById('status').innerHTML = 
-                '<strong style="color:red">ERRO:</strong> Geolocalização não suportada';
         }
     </script>
 </body>
