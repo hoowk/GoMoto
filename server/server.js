@@ -1,25 +1,14 @@
-const express = require('express');
-const socketio = require('socket.io');
-const http = require('http');
-
-const app = express();
-const server = http.createServer(app);
-const io = socketio(server, {
-  cors: { origin: "*" }
-});
-
-const motoboys = {};
-
 io.on('connection', (socket) => {
-  console.log('🔌 Nova conexão:', socket.id);
-
-  // Vincula motoboy ao restaurante
+  // Motoboy se conecta
   socket.on('motoboy-login', (data) => {
-    motoboys[data.motoboyId] = {
-      ...data,
-      socketId: socket.id
-    };
-    console.log(`🛵 ${data.nome} conectado ao Jap Sushi`);
+    console.log(`🛵 ${data.nome} conectado`);
+    motoboys[data.motoboyId] = data;
+  });
+
+  // Restaurante se conecta
+  socket.on('restaurante-login', (restauranteId) => {
+    socket.join(restauranteId);
+    console.log(`🍣 ${restauranteId} conectado`);
   });
 
   // Atualiza localização
@@ -33,15 +22,4 @@ io.on('connection', (socket) => {
       });
     }
   });
-
-  // Restaurante conectado
-  socket.on('restaurante-login', (restauranteId) => {
-    socket.join(restauranteId);
-    console.log(`🍣 ${restauranteId} pronto para receber dados`);
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Servidor ouvindo na porta ${PORT}`);
 });
