@@ -5,15 +5,25 @@
   "display": "standalone",
   "background_color": "#4CAF50",
   "theme_color": "#4CAF50",
-  "description": "Aplicativo de rastreamento para motoboys",
+  "description": "Aplicativo de rastreamento de motoboys",
   "icons": [
     {
-      "src": "./icons/logomoto-192x192.png",
-      "sizes": "192x192",
+      "src": "./icons/logomoto72.png",
+      "sizes": "72x72",
       "type": "image/png"
     },
     {
-      "src": "./icons/logomoto-512x512.png",
+      "src": "./icons/logomoto96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/logomoto128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/logomoto512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
