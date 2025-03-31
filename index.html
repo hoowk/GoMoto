@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoMoto - Rastreamento</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#4CAF50">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <script src="./install.js" defer></script>
     <style>
         body, html { 
             margin: 0; 
@@ -36,7 +37,7 @@
         .moto-marker {
             width: 40px; 
             height: 40px;
-            background-image: url('icons/moto.png');
+            background-image: url('./icons/moto.png');
             background-size: contain;
             filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
         }
@@ -106,13 +107,16 @@
     <div class="user-info" id="userInfo"></div>
 
     <script>
+        // Verificar login
         const nomeMotoboy = localStorage.getItem("motoboyNome");
         if (!nomeMotoboy) {
             window.location.href = "login.html";
         }
         
+        // Atualizar UI com nome do motoboy
         document.getElementById("userInfo").textContent = nomeMotoboy;
         
+        // Inicializar mapa
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
@@ -120,33 +124,39 @@
             zoom: 14
         });
         
+        // Criar marcador
         const el = document.createElement('div');
         el.className = 'moto-marker';
         const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
             .setLngLat([-48.5487, -27.5928])
             .addTo(map);
         
+        // Verificar estado do toggle
         let tracking = localStorage.getItem("tracking") === "true";
         document.getElementById('toggle').classList.toggle('active', tracking);
         
+        // Atualizar status inicial
         document.getElementById('status').innerHTML = tracking ? 
             `<strong>${nomeMotoboy}</strong><br>Aguardando localização...` :
             `<strong>${nomeMotoboy}</strong><br>Localização desativada`;
         
+        // Configurar Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js').then(registration => {
+            navigator.serviceWorker.register('./service-worker.js').then(registration => {
                 console.log('ServiceWorker registrado com sucesso:', registration.scope);
             }).catch(error => {
                 console.log('Falha ao registrar ServiceWorker:', error);
             });
         }
         
+        // Controle do toggle
         document.getElementById('toggle').addEventListener('click', function() {
             tracking = !tracking;
             this.classList.toggle('active', tracking);
             localStorage.setItem("tracking", tracking.toString());
             
             if (!tracking) {
+                // Deslogar ao desativar
                 localStorage.removeItem("motoboyNome");
                 localStorage.removeItem("tracking");
                 window.location.href = "login.html";
@@ -155,6 +165,7 @@
             }
         });
         
+        // Monitorar localização
         if (navigator.geolocation) {
             const watchId = navigator.geolocation.watchPosition(
                 (pos) => {
@@ -163,6 +174,7 @@
                         marker.setLngLat(lngLat);
                         map.flyTo({ center: lngLat, zoom: 16 });
                         
+                        // Atualizar status
                         document.getElementById('status').innerHTML = `
                             <strong>${nomeMotoboy}</strong><br>
                             ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}<br>
@@ -170,6 +182,7 @@
                             ${new Date().toLocaleTimeString()}
                         `;
                         
+                        // Enviar localização para o servidor (simulado)
                         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                             navigator.serviceWorker.controller.postMessage({
                                 type: 'UPDATE_LOCATION',
@@ -197,6 +210,7 @@
                 }
             );
             
+            // Limpar watchPosition ao sair
             window.addEventListener('beforeunload', () => {
                 if (!tracking) {
                     navigator.geolocation.clearWatch(watchId);
@@ -205,6 +219,20 @@
         } else {
             document.getElementById('status').innerHTML = 
                 '<strong style="color:red">ERRO:</strong> Geolocalização não suportada pelo navegador';
+        }
+
+        // Forçar atualização do Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    registrations.forEach(registration => {
+                        registration.unregister().then(() => {
+                            console.log('ServiceWorker desregistrado');
+                            window.location.reload();
+                        });
+                    });
+                });
+            });
         }
     </script>
 </body>
