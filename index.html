@@ -75,7 +75,7 @@
         .moto-marker {
             width: 40px;
             height: 40px;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/2972/2972185.png');
+            background-image: url('./icons/moto.png');
             background-size: contain;
         }
     </style>
@@ -113,15 +113,15 @@
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=kEB2a1outAjGbGUoNn6x',
-            center: [-48.5487, -27.5928],
+            center: [-46.6395, -23.5497], // Mesma coordenada do restaurante
             zoom: 14
         });
 
-        // Marcador
+        // Marcador (Ícone ORIGINAL da pasta icons)
         const el = document.createElement('div');
         el.className = 'moto-marker';
         const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-            .setLngLat([-48.5487, -27.5928])
+            .setLngLat([-46.6395, -23.5497])
             .addTo(map);
 
         // Controle de rastreamento
